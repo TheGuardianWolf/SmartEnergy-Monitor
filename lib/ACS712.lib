@@ -1,0 +1,13 @@
+.subckt ACS712 I+ I- Filter Out V+ V-
+.param gain=185m; 185m -05B, 100m -20A, 66m -30A
+V1 I+ I- 0
+F1 V- 2 V1 {gain}
+T1 1 V- 2 V- Td=1u Zo=1
+R1 2 V- 1
+R2 Filter 2 1k7
+G1 V- 3 Filter V- 1
+C1 3 V- 1µ3 Rpar=1
+R3 Out 3 50
+G2 V- 3 V+ V- 0.5
+R4 V+ V- 2k
+.ends ACS712
