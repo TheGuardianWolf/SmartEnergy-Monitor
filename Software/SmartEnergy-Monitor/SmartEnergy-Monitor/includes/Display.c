@@ -5,84 +5,86 @@
 *  Author: lichk
 */
 
-int8_t display_encode_char(char character)
+#include "Display.h"
+
+int8_t display_encode_char(int8_t character)
 {
 	switch (character)
 	{
 		case '0':
-		return 0b10000001;
+		return 0b01111110;
 		case '1':
-		return 0b11001111;
+		return 0b00110000;
 		case '2':
-		return 0b10010010;
+		return 0b01101101;
 		case '3':
-		return 0b10000110;
+		return 0b01111001;
 		case '4':
-		return 0b11001100;
+		return 0b00110011;
 		case '5':
-		return 0b10100100;
+		return 0b01011011;
 		case '6':
-		return 0b10100000;
+		return 0b01011111;
 		case '7':
-		return 0b10011111;
+		return 0b01100000;
 		case '8':
-		return 0b10000000;
+		return 0b01111111;
 		case '9':
-		return 0b10001100;
+		return 0b01110011;
 		case 'A':
-		return 0b10001000;
+		return 0b01110111;
 		case 'b':
-		return 0b11100000;
+		return 0b00011111;
 		case 'C':
-		return 0b10110001;
+		return 0b01001110;
 		case 'd':
-		return 0b11000010;
+		return 0b00111101;
 		case 'E':
-		return 0b10110000;
+		return 0b01001111;
 		case 'F':
-		return 0b10111000;
+		return 0b01000111;
 		case 'H':
-		return 0b11001000;
+		return 0b00110111;
 		case 'I':
-		return 0b11111001;
+		return 0b00000110;
 		case 'l':
-		return 0b11111001;
+		return 0b00000110;
 		case 'L':
-		return 0b11110001;
+		return 0b00001110;
 		case 'n':
-		return 0b11101010;
+		return 0b00010101;
 		case 'o':
-		return 0b11101010;
+		return 0b00010101;
 		case 'P':
-		return 0b10011000;
+		return 0b01100111;
 		case 'r':
-		return 0b11111010;
+		return 0b00000101;
 		case 'S':
-		return 0b10100100;
+		return 0b01011011;
 		case 'U':
-		return 0b11000001;
+		return 0b00111110;
 		case 'y':
-		return 0b11000100;
+		return 0b00111011;
 		case 'Z':
-		return 0b10010010;
+		return 0b01101101;
 		default:
-		return 0b10000001;
+		return 0b01111110;
 	}
 }
 
-int8_t display_sync();
+int8_t display_sync()
 {
-	return 0b11111111;
+	return 0b00000000;
 }
 
-void display_encode(char &characters, uint8_t decimal_index)
+void display_encode(int8_t *characters, uint8_t decimal_index)
 {
 	for (uint8_t i = 0; i < 4; i++)
 	{
-		*characters[i] = display_encode_char(*characters[i]);
+		characters[i] = display_encode_char(characters[i]);
 		if (i == decimal_index)
 		{
-			*characters[i] |= (1 << 7);
+			characters[i] |= (1 << 7);
 		}
 	}
 }

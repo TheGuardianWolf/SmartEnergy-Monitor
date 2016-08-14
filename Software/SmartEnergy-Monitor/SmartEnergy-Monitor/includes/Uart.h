@@ -20,6 +20,8 @@
 
 void uart_init(uint16_t baud);
 
-void uart_transmit(uint8_t data);
+void uart_transmit(int8_t data);
+
+void uart_transmit_array(int8_t *data, uint8_t array_size);
 
 #endif /* UART_H_ */

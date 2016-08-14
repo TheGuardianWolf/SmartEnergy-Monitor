@@ -11,6 +11,15 @@
 
 int main(void)
 {
+	int8_t characters[4] = "1234";
+
+	display_encode(characters,1);
+
 	uart_init(BAUDRATE);
-	uart_transmit(display_encode_char(0));
+
+	while(1) {
+	uart_transmit(0b10000000);
+	}
+	
+	//uart_transmit_array(characters, 4);
 }

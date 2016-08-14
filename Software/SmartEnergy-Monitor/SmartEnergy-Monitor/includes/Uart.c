@@ -19,8 +19,16 @@ void uart_init(uint16_t baud)
 	//UCSR0C &= ~(1<<UMSEL00) & ~(1<<UMSEL01) & ~(1<<UPM01) & ~(1<<UPM00) & ~(1<<USBS0) & ~(1<<UCSZ02);
 }
 
-void uart_transmit(uint8_t data)
+void uart_transmit(int8_t data)
 {
 	while(!((1<<UDRE0) && UCSR0A));
 	UDR0 = data;
+}
+
+void uart_transmit_array(int8_t *data, uint8_t array_size)
+{
+	for (uint8_t i = 0; i < array_size; i++)
+	{
+		uart_transmit(data[i]);
+	}
 }

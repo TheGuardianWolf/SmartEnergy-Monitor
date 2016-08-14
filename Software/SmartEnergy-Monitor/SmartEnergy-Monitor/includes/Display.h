@@ -11,9 +11,9 @@
 
 #include <avr/io.h>
 
-int8_t display_encode_char(char character);
+int8_t display_encode_char(int8_t character);
 
-void display_encode(char &characters);
+void display_encode(int8_t *characters, uint8_t decimal_index);
 
 int8_t display_sync();
 
