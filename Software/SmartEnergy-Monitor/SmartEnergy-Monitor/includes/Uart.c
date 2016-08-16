@@ -10,8 +10,9 @@
 void uart_init(uint16_t baud)
 {
 	UCSR0B |= (1<<TXEN0);
-	UBRR0H = (uint8_t) (baud>>8);
-	UBRR0L = (uint8_t) baud;
+	UCSR0C = (1 << UCSZ00) | (1 << UCSZ01);	// use 8-bit character sizes
+	UBRR0H = (baud >> 8);
+	UBRR0L = baud;
 
 	_delay_ms(1);
 }
