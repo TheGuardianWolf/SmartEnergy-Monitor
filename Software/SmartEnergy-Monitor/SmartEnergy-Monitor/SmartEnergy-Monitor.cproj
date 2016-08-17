@@ -139,6 +139,12 @@
     <Compile Include="includes\Display.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="includes\Interactive.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="includes\Interactive.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="includes\Uart.c">
       <SubType>compile</SubType>
     </Compile>
