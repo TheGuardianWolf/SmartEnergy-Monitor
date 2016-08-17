@@ -9,8 +9,8 @@
 
 void uart_init(uint16_t baud)
 {
-	UCSR0B |= (1<<TXEN0);
-	UCSR0C = (1 << UCSZ00) | (1 << UCSZ01);	// use 8-bit character sizes
+	UCSR0B = (1 << TXEN0);
+	UCSR0C = (1 << UPM00) | (1 << UPM01) | (1 << USBS0) | (1 << UCSZ00) | (1 << UCSZ01) ; 	// use 8-bit character sizes and two stop bits
 	UBRR0H = (baud >> 8);
 	UBRR0L = baud;
 
@@ -28,6 +28,5 @@ void uart_transmit_array(int8_t *data, uint8_t array_size)
 	for (uint8_t i = 0; i < array_size; i++)
 	{
 		uart_transmit(data[(array_size - 1) - i]);
-		_delay_ms(1);
 	}
 }
