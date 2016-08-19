@@ -67,6 +67,22 @@ int8_t display_encode_char(int8_t character)
 		return 0b00111011;
 		case 'Z':
 		return 0b01101101;
+		case '-':
+		return 0b00000001;
+		case '_':
+		return 0b00001000;
+		case '\'':
+		return 0b00000010;
+		case '"':
+		return 0b00100010;
+		case '^':
+		return 0b01100010;
+		case '[':
+		return 0b01001110;
+		case ']':
+		return 0b01111000;
+		case ' ':
+		return 0b00000000;
 		default:
 		return 0b01111110;
 	}
@@ -74,7 +90,7 @@ int8_t display_encode_char(int8_t character)
 
 int8_t display_sync()
 {
-	return 0b00000000;
+	return 0b01101100;
 }
 
 void display_encode(int8_t *characters, uint8_t decimal_index)
