@@ -2,8 +2,8 @@
  * Interactive.h
  *
  * Created: 18/08/2016 6:48:07 AM
- *  Author: lichk
- */ 
+ *  Author: Jerry Fan
+ */
 
 
 #ifndef INTERACTIVE_H_
@@ -15,6 +15,9 @@
 
 #include <avr/io.h>
 
+/**
+ * Initialise the IO registers for reading/writing
+ */
 void io_init();
 
 

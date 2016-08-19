@@ -2,7 +2,7 @@
 * Display.c
 *
 * Created: 13/08/2016 2:36:17 AM
-*  Author: lichk
+*  Author: Jerry Fan
 */
 
 #include "Display.h"
@@ -90,7 +90,7 @@ int8_t display_encode_char(int8_t character)
 
 int8_t display_sync()
 {
-	return 0b01101100;
+	return 0b00000000;
 }
 
 void display_encode(int8_t *characters, uint8_t decimal_index)
@@ -100,8 +100,7 @@ void display_encode(int8_t *characters, uint8_t decimal_index)
 		characters[i] = display_encode_char(characters[i]);
 		if (i == decimal_index)
 		{
-			characters[i] |= (1 << 7);
+			characters[i] |= (1 << 7); 				// Bit twiddling to enable the dp bit
 		}
 	}
 }
-
