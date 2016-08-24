@@ -7,13 +7,13 @@
 
 #include "uart.h"
 
-void uart_init(uint16_t baud)
+void uart_init()
 {
 	UCSR0B = (1 << TXEN0); // Enable transmitter
 	UCSR0C = (1 << UPM00) | (1 << UPM01) | (1 << USBS0) | (1 << UCSZ00) |
 					 (1 << UCSZ01); // 8-bit data, 2 stop bits, odd parity
-	UBRR0H = (baud >> 8); // Set the prescaler on high
-	UBRR0L = baud; // Set the prescaler on low
+	UBRR0H = (BAUDRATE >> 8); // Set the prescaler on high
+	UBRR0L = BAUDRATE; // Set the prescaler on low
 
 	_delay_ms(1); // Pause before resuming
 }
