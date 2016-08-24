@@ -10,30 +10,31 @@
 #define TRUE (1==1)
 #define FALSE (!TRUE)
 
-#include "protothreads/pt.h"
-#include "includes/Sensors.h"
-#include "includes/Calc.h"
 #include "includes/Interactive.h"
 #include "includes/Uart.h"
 #include "includes/Display.h"
 
-void initialise()
-{
-	io_init();
-	adc_init();
-	uart_init();
-}
-
 int main(void)
 {
-	initialise();
+	io_init(); // Prepare the IO registers for writing/reading
+	uart_init(BAUDRATE); // Set the correct prescaler and UART options
 
-	static uint16_t adc_result[3];
+	int8_t characters[4] = "P189"; // Characters to be transmitted in a char array
+
+	display_encode(characters,1); // Encode the characters and add decimal
+
 	while(1)
 	{
-		for (uint8_t i = 0; i < 3; i++)
+		uart_transmit(display_sync()); // Whilst idle, send the sync packet
+
+		if (SWITCH_DOWN)
 		{
-			adc_result[i] = adc_read(i);
+			while(TRUE)
+			{
+				LED_ON;
+				uart_transmit(display_sync()); // Sync after every 4 digits.
+				uart_transmit_array(characters,4); // Transmit the 4 character array
+			}
 		}
 	}
 }

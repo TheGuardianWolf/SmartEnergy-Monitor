@@ -25,7 +25,7 @@
  * stop bits and an odd parity bit.
  * @param baud Calculated BAUDRATE
  */
-void uart_init();
+void uart_init(uint16_t baud);
 
 /**
  * Transmits data
