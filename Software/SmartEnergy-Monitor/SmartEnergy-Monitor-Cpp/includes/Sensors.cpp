@@ -35,10 +35,3 @@
 	 
 	return (ADC);
  }
-
- struct AdcData adc_get_data(uint8_t ch)
- {
-	struct AdcData adc_data;
-	adc_data.value = adc_read(ch);
-
- }

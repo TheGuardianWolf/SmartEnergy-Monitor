@@ -7,11 +7,13 @@
  * Author : Jerry Fan
  */
 
+#define __AVR_ATmega328P__ 1
 #define TRUE (1==1)
 #define FALSE (!TRUE)
 
-#include "timer/timer.h"
-#include "protothreads/pt.h"
+
+#include "lib/AVRTools/InitSystem.h"
+#include "lib/AVRTools/SystemClock.h"
 #include "includes/Sensors.h"
 #include "includes/Calc.h"
 #include "includes/Interactive.h"
@@ -30,13 +32,20 @@ void initialise()
 int main(void)
 {
 	initialise();
-
-	static struct AdcData adc_result[3];
-	while(1)
+	while(true)
 	{
-		for (uint8_t i = 0; i < 3; i++)
+		if (SWITCH_DOWN)
 		{
-			adc_result[i] = adc_get_data(i);
+			LED_ON;
 		}
 	}
+//
+	//static uint16_t adc_result[3];
+	//while(1)
+	//{
+		//for (uint8_t i = 0; i < 3; i++)
+		//{
+			////adc_result[i] = adc_get_data(i);
+		//}
+	//}
 }

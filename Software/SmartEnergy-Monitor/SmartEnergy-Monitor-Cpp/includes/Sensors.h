@@ -14,20 +14,18 @@
 #define F_CPU 16000000UL
 #endif
 
-#include <avr/io.h>
-#include "../timer/timer.h"
+#include "lib/AVRTools/ArduinoPins.h"
+#include "lib/timer/timer.h"
 
 struct AdcData
 {
 	time_t timestamp;
 	uint16_t value;
-} adcdata;
+};
 
 void adc_init();
 
 uint16_t adc_read(uint8_t ch);
-
-struct AdcData adc_get_data(uint8_t ch);
 
 
 #endif /* SENSORS_H_ */
