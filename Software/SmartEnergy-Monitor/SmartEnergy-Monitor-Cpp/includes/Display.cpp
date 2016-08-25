@@ -7,7 +7,19 @@
 
 #include "Display.h"
 
-int8_t display_encode_char(int8_t character)
+using namespace USART0;
+
+ Display::Display()
+ {
+
+ }
+
+ void Display::init()
+ {
+	start(9600, kSerial_8O2);
+ }
+
+char Display::encodeChar(char character)
 {
 	switch (character)
 	{
@@ -88,19 +100,31 @@ int8_t display_encode_char(int8_t character)
 	}
 }
 
-int8_t display_sync()
-{
-	return 0b00000000;
-}
-
-void display_encode(int8_t *characters, uint8_t decimal_index)
+void Display::encode(char *characters, uint8_t decimal_index)
 {
 	for (uint8_t i = 0; i < 4; i++)
 	{
-		characters[i] = display_encode_char(characters[i]);
+		characters[i] = Display::encodeChar(characters[i]);
 		if (i == decimal_index)
 		{
 			characters[i] |= (1 << 7); 				// Bit twiddling to enable the dp bit
 		}
 	}
+}
+
+void Display::sync()
+{
+	char character = 0b00000000;
+	write(character);
+}
+
+void Display::sendChar(char character)
+{
+	write(Display::encodeChar(character));
+}
+
+void Display::send(char *characters, uint8_t decimal_index)
+{
+	Display::encode(characters, decimal_index);
+	write(characters);
 }

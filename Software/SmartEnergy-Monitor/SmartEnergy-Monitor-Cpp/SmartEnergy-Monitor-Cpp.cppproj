@@ -25,7 +25,7 @@
     <preserveEEPROM>true</preserveEEPROM>
     <OverrideVtorValue>exception_table</OverrideVtorValue>
     <BootSegment>2</BootSegment>
-    <eraseonlaunchrule>0</eraseonlaunchrule>
+    <eraseonlaunchrule>1</eraseonlaunchrule>
     <avrtool>com.atmel.avrdbg.tool.medbg</avrtool>
     <avrtoolserialnumber>ATML2323040200011010</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x1E950F</avrdeviceexpectedsignature>
@@ -33,13 +33,13 @@
       <ToolOptions>
         <InterfaceProperties>
         </InterfaceProperties>
-        <InterfaceName>ISP</InterfaceName>
+        <InterfaceName>debugWIRE</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.medbg</ToolType>
       <ToolNumber>ATML2323040200011010</ToolNumber>
       <ToolName>mEDBG</ToolName>
     </com_atmel_avrdbg_tool_medbg>
-    <avrtoolinterface>ISP</avrtoolinterface>
+    <avrtoolinterface>debugWIRE</avrtoolinterface>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -142,7 +142,7 @@
   <avrgcccpp.compiler.optimization.AllocateBytesNeededForEnum>True</avrgcccpp.compiler.optimization.AllocateBytesNeededForEnum>
   <avrgcccpp.compiler.optimization.DebugLevel>Default (-g2)</avrgcccpp.compiler.optimization.DebugLevel>
   <avrgcccpp.compiler.warnings.AllWarnings>True</avrgcccpp.compiler.warnings.AllWarnings>
-  <avrgcccpp.compiler.miscellaneous.OtherFlags>-Wno-reorder</avrgcccpp.compiler.miscellaneous.OtherFlags>
+  <avrgcccpp.compiler.miscellaneous.OtherFlags>-Wno-reorder -Wno-unused-parameter -Wno-return-type</avrgcccpp.compiler.miscellaneous.OtherFlags>
   <avrgcccpp.linker.libraries.Libraries>
     <ListValues>
       <Value>libm</Value>
@@ -170,16 +170,16 @@
     <Compile Include="includes\Display.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="includes\Interactive.cpp">
+    <Compile Include="includes\Interface.cpp">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="includes\Interactive.h">
+    <Compile Include="includes\Interface.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="includes\Sensors.cpp">
+    <Compile Include="includes\A2D.cpp">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="includes\Sensors.h">
+    <Compile Include="includes\A2D.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="includes\Uart.cpp">
@@ -188,12 +188,88 @@
     <Compile Include="includes\Uart.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="lib\AVRTools\abi.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\abi.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\Analog2Digital.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\Analog2Digital.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\ArduinoPins.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\ArduinoUnoPins.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\GpioPinMacros.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\new.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\new.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\Reader.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\Reader.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\RingBuffer.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\RingBuffer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\SystemClock.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\SystemClock.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\USART0.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\USART0.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\USART0Minimal.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\USART0Minimal.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\Writer.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\AVRTools\Writer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\protothreads\Protothread.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\timer\timer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lib\timer\timer.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.cpp">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="includes" />
+    <Folder Include="lib" />
+    <Folder Include="lib\AVRTools" />
+    <Folder Include="lib\protothreads" />
+    <Folder Include="lib\timer" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

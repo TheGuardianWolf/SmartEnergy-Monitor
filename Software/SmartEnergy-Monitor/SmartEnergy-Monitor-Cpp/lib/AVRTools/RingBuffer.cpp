@@ -90,6 +90,7 @@ bool RingBuffer::isFull()
     {
         return ( mSize - mLength ) <= 0;
     }
+	return false;
 }
 
 
@@ -99,6 +100,7 @@ bool RingBuffer::isNotFull()
     {
         return ( mSize - mLength ) > 0;
     }
+	return false;
 }
 
 

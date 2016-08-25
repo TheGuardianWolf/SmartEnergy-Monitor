@@ -19,6 +19,12 @@
 */
 
 
+/*
+
+	File modified on 25/08/16 by Jerry Fan
+
+*/
+
 /*!
  * \file
  *
@@ -38,9 +44,6 @@
 #include "GpioPinMacros.h"
 
 
-#if defined(__AVR_ATmega2560__)
-
-
 /*! \brief Constants representing voltage references
  *
  */
@@ -53,16 +56,16 @@ enum A2DVoltageReference
     kA2dReference256V = 0x03     //!< Reference is internal 2.56V VREF (only available on ATmega2560) \hideinitializer
 };
 
-#else
-
-enum A2DVoltageReference
+enum A2DPrescalar
 {
-    kA2dReferenceAREF = 0x00,    // 0x00 -> AREF pin, internal VREF turned off
-    kA2dReferenceAVCC = 0x01,    // 0x01 -> AVCC pin, internal VREF turned off
-    kA2dReference11V  = 0x03     // 0x03 -> Internal 1.1V VREF
+	kA2dPrescaleDiv2 =      0x00,    // 0x01,0x00    -> clk/2    = 8 MHz
+	kA2dPrescaleDiv4 =      0x02,    // 0x02         -> clk/4    = 4 MHz
+	kA2dPrescaleDiv8 =      0x03,    // 0x03         -> clk/8    = 2 MHz
+	kA2dPrescaleDiv16 =     0x04,    // 0x04         -> clk/16   = 1 MHz
+	kA2dPrescaleDiv32 =     0x05,    // 0x05         -> clk/32   = 500 KHz
+	kA2dPrescaleDiv64 =     0x06,    // 0x06         -> clk/64   = 250 KHz
+	kA2dPrescaleDiv128 =    0x07     // 0x07         -> clk/128  = 125 KHz
 };
-
-#endif
 
 
 /*
@@ -92,7 +95,7 @@ enum A2DVoltageReference
  * \hideinitializer
  */
 
-#define readGpioPinAnalog( pinName )                                        _readGpioPinAnalog( pinName )
+#define readGpioPinAnalog( pinName ) _readGpioPinAnalog( pinName )
 
 
 int readA2D( int8_t channel );
@@ -130,7 +133,7 @@ inline uint16_t readGpioPinAnalogV( const GpioPinVariable& pinVar )
  * kA2dReferenceAVCC.
  */
 
-void initA2D( uint8_t ref = kA2dReferenceAVCC );
+void initA2D( uint8_t ref = kA2dReferenceAVCC, uint8_t prescale = kA2dPrescaleDiv128 );
 
 
 
@@ -184,11 +187,9 @@ inline void setA2DVoltageReferenceAVCC()
  * This is an inline synonym for setA2DVoltageReference( kA2dReference11V )
  */
 
+
 inline void setA2DVoltageReference11V()
 { setA2DVoltageReference( kA2dReference11V ); }
-
-
-#if defined(__AVR_ATmega2560__)
 
 
 /*!
@@ -202,7 +203,6 @@ inline void setA2DVoltageReference11V()
 inline void setA2DVoltageReference256V()
 { setA2DVoltageReference( kA2dReference256V ); }
 
-#endif
 
 
 

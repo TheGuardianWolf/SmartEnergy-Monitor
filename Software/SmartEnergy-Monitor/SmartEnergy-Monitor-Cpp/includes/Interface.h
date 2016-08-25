@@ -6,8 +6,8 @@
  */
 
 
-#ifndef INTERACTIVE_H_
-#define INTERACTIVE_H_
+#ifndef INTERFACE_H_
+#define INTERFACE_H_
 
 #define LED pPin13
 #define SWITCH pPin09
@@ -17,11 +17,15 @@
 
 #include "lib/AVRTools/ArduinoPins.h"
 
-/**
- * Initialise the IO registers for reading/writing
- */
-void io_init();
+class Interface {
+public:
+	Interface();
+	/**
+	 * Initialise the IO registers for reading/writing
+	 */
+	static void init();
+};
 
 
 
-#endif /* INTERACTIVE_H_ */
+#endif /* INTERFACE_H_ */

@@ -19,25 +19,16 @@
 */
 
 
+/*
 
+	File modified on 25/08/16 by Jerry Fan
+
+*/
 
 #include "Analog2Digital.h"
 
 #include <avr/io.h>
 #include <util/delay.h>
-
-
-
-enum A2DPrescalar
-{
-    kA2dPrescaleDiv2 =      0x00,    // 0x01,0x00    -> clk/2    = 8 MHz
-    kA2dPrescaleDiv4 =      0x02,    // 0x02         -> clk/4    = 4 MHz
-    kA2dPrescaleDiv8 =      0x03,    // 0x03         -> clk/8    = 2 MHz
-    kA2dPrescaleDiv16 =     0x04,    // 0x04         -> clk/16   = 1 MHz
-    kA2dPrescaleDiv32 =     0x05,    // 0x05         -> clk/32   = 500 KHz
-    kA2dPrescaleDiv64 =     0x06,    // 0x06         -> clk/64   = 250 KHz
-    kA2dPrescaleDiv128 =    0x07     // 0x07         -> clk/128  = 125 KHz
-};
 
 
 namespace
@@ -47,10 +38,10 @@ namespace
 
 
 
-void initA2D( uint8_t ref )
+void initA2D( uint8_t ref, uint8_t prescale )
 {
     // Set default prescaler, and zero the rest of ADCSRA
-    ADCSRA = kA2dPrescaleDiv128;
+    ADCSRA = prescale;
 
     // Zero ADCSRB
     ADCSRB = 0;

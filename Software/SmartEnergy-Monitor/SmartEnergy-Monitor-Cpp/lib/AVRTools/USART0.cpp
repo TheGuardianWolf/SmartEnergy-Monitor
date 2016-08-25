@@ -22,6 +22,12 @@
 */
 
 
+/*
+
+	File modified on 25/08/16 by Jerry Fan
+
+*/
+
 
 #include "USART0.h"
 
@@ -84,6 +90,7 @@ ISR( USART_RX_vect )
     else
     {
         unsigned char c = UDR0;
+		(void) c;
     }
 }
 

@@ -1,13 +1,18 @@
 /*
- * Interactive.c
+ * Interface.c
  *
  * Created: 18/08/2016 6:47:54 AM
  *  Author: Jerry Fan
  */
 
- #include "Interactive.h"
+ #include "Interface.h"
+ 
+ Interface::Interface() 
+ {
 
- void io_init()
+ }
+ 
+ void Interface::init()
  {
 	setGpioPinModeOutput(LED);
 	setGpioPinModeInput(SWITCH);

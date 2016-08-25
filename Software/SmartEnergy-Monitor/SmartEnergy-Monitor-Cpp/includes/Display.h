@@ -9,27 +9,23 @@
 #ifndef DISPLAY_H_
 #define DISPLAY_H_
 
-#include <avr/io.h>
+#include "lib/AVRTools/USART0.h"
 
-/**
- * Encode one character for displaying on the LCD using the special UART
- * encoding scheme.
- * @param  character The character to be encoded
- * @return           The encoded character
- */
-int8_t display_encode_char(int8_t character);
+class Display {
+public:
+	Display();
 
-/**
- * Returns the currently set sync packet.
- * @return The sync packet
- */
-int8_t display_sync();
+	static void init();
 
-/**
- * Encodes an array of up to 4 characters inplace using encode char.
- * @param characters    The pointer to the array to be encoded
- * @param decimal_index The index where the decimal should be placed.
- */
-void display_encode(int8_t *characters, uint8_t decimal_index);
+	static char encodeChar(char character);
+
+	static void encode(char *characters, uint8_t decimal_index);
+
+	static void sync();
+
+	static void sendChar(char character);
+
+	static void send(char *characters, uint8_t decimal_index);
+};
 
 #endif /* DISPLAY_H_ */
