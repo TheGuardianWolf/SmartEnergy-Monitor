@@ -11,21 +11,25 @@
 
 #include "lib/AVRTools/USART0.h"
 
-class Display {
-public:
+class Display 
+{
+	public:
 	Display();
 
 	static void init();
 
-	static char encodeChar(char character);
+	char encodeChar(char character);
 
-	static void encode(char *characters, uint8_t decimal_index);
+	void encode(char *characters, uint8_t decimalIndex);
 
-	static void sync();
+	void sync();
 
-	static void sendChar(char character);
+	void sendChar(char character);
 
-	static void send(char *characters, uint8_t decimal_index);
+	void send(char *characters, uint8_t decimalIndex);
+
+	private:
+	Serial0 serial0;
 };
 
 #endif /* DISPLAY_H_ */

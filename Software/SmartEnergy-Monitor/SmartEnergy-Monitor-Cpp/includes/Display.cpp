@@ -6,22 +6,21 @@
 */
 
 #include "Display.h"
-
-using namespace USART0;
+#include "lib/AVRTools/new.h"
 
  Display::Display()
  {
-
+	
  }
 
  void Display::init()
  {
-	start(9600, kSerial_8O2);
+	USART0::start(9600, kSerial_8O2);
  }
 
 char Display::encodeChar(char character)
 {
-	switch (character)
+	switch(character)
 	{
 		case '0':
 		return 0b01111110;
@@ -100,12 +99,12 @@ char Display::encodeChar(char character)
 	}
 }
 
-void Display::encode(char *characters, uint8_t decimal_index)
+void Display::encode(char *characters, uint8_t decimalIndex)
 {
 	for (uint8_t i = 0; i < 4; i++)
 	{
 		characters[i] = Display::encodeChar(characters[i]);
-		if (i == decimal_index)
+		if (i == decimalIndex)
 		{
 			characters[i] |= (1 << 7); 				// Bit twiddling to enable the dp bit
 		}
@@ -115,16 +114,16 @@ void Display::encode(char *characters, uint8_t decimal_index)
 void Display::sync()
 {
 	char character = 0b00000000;
-	write(character);
+	serial0.write(character);
 }
 
 void Display::sendChar(char character)
 {
-	write(Display::encodeChar(character));
+	serial0.write(Display::encodeChar(character));
 }
 
 void Display::send(char *characters, uint8_t decimal_index)
 {
 	Display::encode(characters, decimal_index);
-	write(characters);
+	serial0.write(characters);
 }

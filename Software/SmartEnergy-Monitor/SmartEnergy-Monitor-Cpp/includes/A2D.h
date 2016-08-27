@@ -9,36 +9,82 @@
 #ifndef A2D_H_
 #define A2D_H_
 
-// F_CPU should be defined in compile flags
-#ifndef F_CPU
-#define F_CPU 16000000UL
-#endif
+#include <stdint.h>
+#include <stddef.h>
 
-#include "lib/AVRTools/ArduinoPins.h"
-#include "lib/AVRTools/Analog2Digital.h"
-#include "lib/timer/timer.h"
-
-class A2D {
-public:
+class A2D 
+{
+	public:
 	A2D(uint8_t ch);
+
+	~A2D();
 
 	struct A2DData
 	{
-		time_t timestamp;
+		unsigned long timestamp;
 		uint16_t value;
 	};
 
 	static void init();
 
-	void read();
+	bool dataAvailable;
 
-	uint16_t* getData();
-private:
-	void incrementDataPointer();
+	void collect(uint16_t adc_data);
+
+	void setAsZeroReference();
+
+	A2DData getData();
+
+	A2DData getDataBlocking();
+
+	protected:
+	A2DData a2dData;
 
 	uint8_t channel;
-	uint16_t data[20];
-	uint8_t dataPointer;
+};
+
+class Signal : public A2D
+{
+	public:
+	Signal(uint8_t ch);
+
+	~Signal();
+
+	struct SignalData
+	{
+		int16_t sum;
+		int16_t max;
+		int16_t min;
+		uint32_t squared;
+	};
+
+	virtual bool processData(int16_t nullValue);
+
+	bool comparatorSetPeriod();
+
+	protected:
+	uint8_t sampleCount;
+	int16_t upperThreshold;
+	int16_t lowerThreshold;
+	SignalData currentData;
+	SignalData storedData;
+	unsigned long lastPeriod;
+	bool waveDirection;
+
+	private:
+	void enableChannel();
+
+	void disableChannel();
+};
+
+class Power
+{
+	public:
+	Power();
+	protected:
+	int16_t instantPower;
+	//Signal voltage(0);
+	//Signal current(1);
 };
 
 #endif /* A2D_H_ */

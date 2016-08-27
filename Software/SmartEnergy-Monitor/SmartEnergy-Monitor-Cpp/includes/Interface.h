@@ -17,13 +17,14 @@
 
 #include "lib/AVRTools/ArduinoPins.h"
 
-class Interface {
-public:
-	Interface();
-	/**
-	 * Initialise the IO registers for reading/writing
-	 */
-	static void init();
+class Interface 
+{
+	public:
+		Interface();
+		/**
+		 * Initialise the IO registers for reading/writing
+		 */
+		static void init();
 };
 
 
