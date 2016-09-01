@@ -9,27 +9,25 @@
 #ifndef DISPLAY_H_
 #define DISPLAY_H_
 
-#include "lib/AVRTools/USART0.h"
+#include "UART.h"
 
-class Display 
+class Display : public UART
 {
 	public:
 	Display();
 
-	static void init();
+	void transmit(uint8_t character);
 
-	char encodeChar(char character);
+	void transmitArray(uint8_t *characters, uint8_t decimalIndex);
 
-	void encode(char *characters, uint8_t decimalIndex);
+	void idle();
 
-	void sync();
+	uint8_t encode(uint8_t character);
 
-	void sendChar(char character);
+	void encodeArray(uint8_t *characters, uint8_t decimalIndex);
 
-	void send(char *characters, uint8_t decimalIndex);
-
-	private:
-	Serial0 serial0;
+	uint8_t encodeSync();
+	
 };
 
 #endif /* DISPLAY_H_ */

@@ -158,10 +158,22 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="includes\Buffer.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="includes\Buffer.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="includes\Display.cpp">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="includes\Display.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="includes\Heap.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="includes\Heap.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="includes\Interface.cpp">
@@ -176,85 +188,28 @@
     <Compile Include="includes\A2D.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lib\AVRTools\abi.cpp">
+    <Compile Include="includes\Power.cpp">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lib\AVRTools\abi.h">
+    <Compile Include="includes\Power.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lib\AVRTools\Analog2Digital.cpp">
+    <Compile Include="includes\Signal.cpp">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lib\AVRTools\Analog2Digital.h">
+    <Compile Include="includes\Signal.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lib\AVRTools\ArduinoPins.h">
+    <Compile Include="includes\System.cpp">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lib\AVRTools\ArduinoUnoPins.h">
+    <Compile Include="includes\System.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lib\AVRTools\GpioPinMacros.h">
+    <Compile Include="includes\UART.cpp">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lib\AVRTools\InitSystem.cpp">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\InitSystem.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\new.cpp">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\new.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\Reader.cpp">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\Reader.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\RingBuffer.cpp">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\RingBuffer.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\RingBufferT.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\SystemClock.cpp">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\SystemClock.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\USART0.cpp">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\USART0.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\Writer.cpp">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\AVRTools\Writer.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\protothreads\lc-addrlabels.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\protothreads\lc-switch.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\protothreads\lc.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\protothreads\Protothread.hpp">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="lib\protothreads\pt.h">
+    <Compile Include="includes\UART.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.cpp">
@@ -266,10 +221,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="includes" />
-    <Folder Include="lib" />
-    <Folder Include="lib\AVRTools" />
-    <Folder Include="lib\protothreads" />
-    <Folder Include="lib\timer" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

@@ -6,34 +6,36 @@
 */
 
 #include "Signal.h"
-#include <limits.h>
+
 #include <stddef.h>
 #include <stdint.h>
 #include <avr/interrupt.h>
-#include "lib/AVRTools/SystemClock.h"
+#include "System.h"
 
 #define DEFAULT_NULL 338 // 1024/5*1.65
-
-// Uncomment to use comparator
-// #define __USING_COMPARATOR__ true
 
 Signal::Signal(uint8_t ch = 0)
 :A2D(ch),
 sampleCount(0),
 upperThreshold(10),
 lowerThreshold(10),
-lastPeriod(ULONG_MAX),
+lastPeriod(0),
 waveDirection(false)
 {
-	this->enableChannel();
+	currentData.sum = 0;
+	currentData.squared = 0;
 	currentData.max = -1024;
 	currentData.min = 1024;
+	storedData.sum = 0;
+	storedData.squared = 0;
+	storedData.max = -1024;
+	storedData.min = 1024;
 }
 
 Signal::~Signal()
 {
-	this->disableChannel();
-};
+	A2D::disableChannel();
+}
 
 
 bool Signal::processData(int16_t nullValue = 338)
@@ -47,7 +49,7 @@ bool Signal::processData(int16_t nullValue = 338)
 
 	// Signal measurements
 	this->currentData.sum += relVal;
-	this->currentData.squared += (uint16_t)(relVal * relVal);
+	this->currentData.squared += (uint32_t) ((int32_t) relVal * (int32_t) relVal);
 
 	if(relVal > this->currentData.max)
 	{
@@ -57,7 +59,7 @@ bool Signal::processData(int16_t nullValue = 338)
 	{
 		this->currentData.min = relVal;
 	}
-	
+
 	#ifndef __USING_COMPARATOR__
 
 	// Zero crossing check
@@ -75,23 +77,6 @@ bool Signal::processData(int16_t nullValue = 338)
 
 bool Signal::comparatorSetPeriod()
 {
-	//this->lastPeriod = micros();
+	this->lastPeriod = System::getTimeMicro();
 	return true;
-}
-
-ISR(ADC_vect)
-{
-	uint16_t adcData = ADCL;
-	adcData += (ADCH << 8);
-	activeSignals[currentChannel]->collect(adcData);
-
-	while (currentChannel < 8 && !activeSignals[currentChannel])
-	{
-		currentChannel++;
-		if (activeSignals[currentChannel])
-		{
-			break;
-		}
-	}
-	currentChannel &= 0x08;
 }

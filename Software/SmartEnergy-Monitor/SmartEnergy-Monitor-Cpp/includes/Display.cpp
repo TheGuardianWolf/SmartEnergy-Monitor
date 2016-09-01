@@ -6,19 +6,30 @@
 */
 
 #include "Display.h"
-#include "lib/AVRTools/new.h"
 
- Display::Display()
- {
-	
- }
+#include <avr/io.h>
 
- void Display::init()
- {
-	USART0::start(9600, kSerial_8O2);
- }
+Display::Display()
+{
+}
 
-char Display::encodeChar(char character)
+void Display::transmit(uint8_t character)
+{
+	UART::transmit(this->encode(character));
+}
+
+void Display::transmitArray(uint8_t *characters, uint8_t decimal_index)
+{
+	this->encodeArray(characters, decimal_index);
+	UART::transmitArray(characters, 4);
+}
+
+void Display::idle()
+{
+	UDR0 = this->encodeSync();
+}
+
+uint8_t Display::encode(uint8_t character)
 {
 	switch(character)
 	{
@@ -99,11 +110,11 @@ char Display::encodeChar(char character)
 	}
 }
 
-void Display::encode(char *characters, uint8_t decimalIndex)
+void Display::encodeArray(uint8_t *characters, uint8_t decimalIndex)
 {
 	for (uint8_t i = 0; i < 4; i++)
 	{
-		characters[i] = Display::encodeChar(characters[i]);
+		characters[i] = Display::encode(characters[i]);
 		if (i == decimalIndex)
 		{
 			characters[i] |= (1 << 7); 				// Bit twiddling to enable the dp bit
@@ -111,19 +122,7 @@ void Display::encode(char *characters, uint8_t decimalIndex)
 	}
 }
 
-void Display::sync()
+uint8_t Display::encodeSync()
 {
-	char character = 0b00000000;
-	serial0.write(character);
-}
-
-void Display::sendChar(char character)
-{
-	serial0.write(Display::encodeChar(character));
-}
-
-void Display::send(char *characters, uint8_t decimal_index)
-{
-	Display::encode(characters, decimal_index);
-	serial0.write(characters);
+	return 0b00000000;
 }

@@ -23,7 +23,7 @@ class Signal : public A2D
 		int16_t sum;
 		int16_t max;
 		int16_t min;
-		uint16_t squared;
+		uint32_t squared;
 	};
 
 	virtual bool processData(int16_t nullValue);
@@ -38,16 +38,11 @@ class Signal : public A2D
 	SignalData storedData;
 	unsigned long lastPeriod;
 	bool waveDirection;
-};
 
-class Power
-{
-	public:
-	Power();
-	protected:
-	int16_t instantPower;
-	//Signal voltage(0);
-	//Signal current(1);
+	private:
+	void enableChannel();
+
+	void disableChannel();
 };
 
 

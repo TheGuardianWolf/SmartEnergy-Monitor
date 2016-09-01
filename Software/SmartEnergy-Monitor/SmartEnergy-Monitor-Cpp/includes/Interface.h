@@ -9,14 +9,6 @@
 #ifndef INTERFACE_H_
 #define INTERFACE_H_
 
-#define LED pPin13
-#define SWITCH pPin09
-#define SWITCH_DOWN !getGpioPIN(SWITCH)
-#define LED_ON setGpioPinHigh(LED)
-#define LED_OFF setGpioPinLow(LED)
-
-#include "lib/AVRTools/ArduinoPins.h"
-
 class Interface 
 {
 	public:
@@ -25,6 +17,14 @@ class Interface
 		 * Initialise the IO registers for reading/writing
 		 */
 		static void init();
+
+		void ledOn();
+
+		void ledOff();
+
+		void ledToggle();
+
+		bool buttonIsPressed();
 };
 
 
