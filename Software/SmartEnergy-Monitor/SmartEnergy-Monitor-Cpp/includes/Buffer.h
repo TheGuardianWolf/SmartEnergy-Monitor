@@ -14,8 +14,8 @@
 class Buffer
 {
 public:
-	Buffer();
-	
+	Buffer(uint8_t len);
+
 	~Buffer();
 
 	bool push(uint8_t);
@@ -32,12 +32,10 @@ public:
 
 private:
 	uint8_t length;
+	uint8_t *storage;
 	volatile uint8_t head;
 	volatile uint8_t tail;
 	volatile uint8_t index;
-	uint8_t storage[16];
-
-	uint8_t count();
 };
 
 #endif //__BUFFER_H__

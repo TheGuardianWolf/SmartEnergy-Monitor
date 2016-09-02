@@ -10,15 +10,17 @@
 #include "System.h"
 #include <avr/interrupt.h>
 
+using namespace System;
+
 namespace
 {
-	uint8_t currentChannel = 0;
+	volatile uint8_t currentChannel = 0;
 	A2D *activeA2Ds[8] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 }
 
-A2D::A2D(uint8_t ch = 0)
-	:channel(ch),
-	dataAvailable(false)
+A2D::A2D(uint8_t ch = 0) :
+	dataAvailable(false),
+	channel(ch)
 {
 	this->enableChannel();
 	a2dData.timestamp = 0;
@@ -32,21 +34,14 @@ A2D::~A2D()
 
 void A2D::init()
 {
-		ADMUX &= 0b11011111;
-		ADMUX |= 0b01000000;
-		ADMUX &= 0b11110000;
-		ADCSRA |= 0b10000000;
-		ADCSRB &= 0b11111000;
-		ADCSRA |= 0b00000111;
-
-		ADCSRA |= (1 << ADIE);
-		ADCSRA |= (1 << ADATE);
-		ADCSRA |= (1 << ADSC);
+	ADMUX = (1 << REFS0);
+	ADCSRB = 0;
+	ADCSRA = (1 << ADEN) | (1 << ADIE) | (1 << ADATE) | (1 << ADSC) | (1 << ADPS2) | (1 << ADPS1);
 }
 
 void A2D::collect(uint16_t adcData)
 {
-	this->a2dData.timestamp = System::getTimeMicro();
+	this->a2dData.timestamp = getTimeMicro();
 	this->a2dData.value =  adcData;
 	this->dataAvailable = true;
 }
@@ -80,9 +75,9 @@ void A2D::disableChannel()
 ISR(ADC_vect)
 {
 	uint16_t adcData = ADCL;
+	uint8_t channel = currentChannel;
 	adcData += (ADCH << 8);
 	activeA2Ds[currentChannel]->collect(adcData);
-	activeA2Ds[currentChannel]->processData();
 
 	while (currentChannel < 8 && !activeA2Ds[currentChannel])
 	{
@@ -92,5 +87,5 @@ ISR(ADC_vect)
 			break;
 		}
 	}
-	currentChannel &= 0x08;
+	currentChannel &= 7;
 }

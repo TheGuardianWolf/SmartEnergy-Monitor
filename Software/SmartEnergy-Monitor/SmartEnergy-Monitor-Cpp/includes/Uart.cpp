@@ -28,6 +28,7 @@ namespace
 UART::UART()
 {
 	activeUART = this;
+	this->buffer = new Buffer(16);
 }
 
 void UART::init()
@@ -36,12 +37,13 @@ void UART::init()
 			 (1 << UCSZ01); // 8-bit data, 2 stop bits, odd parity
 	UBRR0H = (BAUDRATE >> 8); // Set the prescaler on high
 	UBRR0L = BAUDRATE; // Set the prescaler on low
-	UCSR0B = (1 << UDRIE0) | (1 << TXEN0); // Enable transmitter and tx buffer interrupt
+	UCSR0B = (1 << TXEN0); //| (1 << UDRIE0); // Enable transmitter and tx buffer interrupt
 }
 
 void UART::transmit(uint8_t data)
 {
 	UCSR0B |= (1 << UDRIE0);
+	UCSR0A |= (1 << TXC0);
 	while ( this->buffer->isFull() );
 	this->buffer->push(data);
 }
@@ -71,6 +73,6 @@ ISR( USART_UDRE_vect )
 	}
 	else
 	{
-		activeUART->idle();
+		UCSR0B &= ~(1 << UDRIE0);
 	}
 }

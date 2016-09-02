@@ -18,5 +18,22 @@ void operator delete(void* pointer);
 
 void operator delete[](void* pointer);
 
+inline void* operator new( size_t, void* pointer )
+{ 
+	return pointer; 
+}
+inline void* operator new[]( size_t, void* pointer )
+{ 
+	return pointer; 
+}
+
+inline void operator delete( void* , void* )
+{
+	
+}
+inline void operator delete[]( void* , void* )
+{
+	
+}
 
 #endif /* HEAP_H_ */

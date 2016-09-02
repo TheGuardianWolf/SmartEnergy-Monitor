@@ -10,7 +10,7 @@
 #define POWER_H_
 
 #include <stdint.h>
-#include "A2D.h"
+#include "includes/Signal.h"
 
 class Power
 {
@@ -21,9 +21,10 @@ class Power
 
 	protected:
 	int16_t instantPower;
-	//Signal voltage(0);
-	//Signal current(1);
-	//Signal nullVoltage(2);
+	uint16_t lastNull;
+	Signal *voltage;
+	Signal *current;
+	Signal *null;
 };
 
 #endif /* POWER_H_ */

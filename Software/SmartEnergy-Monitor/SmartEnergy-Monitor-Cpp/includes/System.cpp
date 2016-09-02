@@ -7,15 +7,9 @@
 
  #include "System.h"
 
- #ifdef USING_ADC
- #include "A2D.h"
- #endif
-
- #ifdef USING_UART
- #include "UART.h"
- #endif
-
  #include <util/atomic.h>
+ #include "UART.h"
+ #include "A2D.h"
 
  namespace
  {
@@ -29,17 +23,12 @@
  {
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-
-		#ifdef USING_ADC
 		A2D::init();
-		#endif
 
-		#ifdef USING_UART
 		UART::init();
-		#endif
 
 		TCCR1A = 0;
-		TCCR1B = (1 << CS11) | (1 << CS10);
+		TCCR1B = (1 << CS11); //| (1 << CS10);
 		TIMSK1 = (1 << TOIE1);
 		TCNT1  = 0;
 	}	

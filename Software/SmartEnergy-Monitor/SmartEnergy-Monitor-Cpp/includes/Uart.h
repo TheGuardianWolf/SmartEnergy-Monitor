@@ -9,7 +9,8 @@
 #define UART_H_
 
 #include <stdint.h>
-#include "Buffer.h"
+#include "includes/Heap.h"
+#include "includes/Buffer.h"
 
 class UART
 {	
@@ -39,7 +40,7 @@ class UART
 
 	virtual void idle();
 
-	Buffer *buffer = new Buffer();
+	Buffer *buffer;
 
 };
 

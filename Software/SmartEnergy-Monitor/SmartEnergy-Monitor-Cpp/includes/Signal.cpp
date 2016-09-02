@@ -14,6 +14,8 @@
 
 #define DEFAULT_NULL 338 // 1024/5*1.65
 
+// #define USING_COMPARATOR 1
+
 Signal::Signal(uint8_t ch = 0)
 :A2D(ch),
 sampleCount(0),
@@ -60,7 +62,7 @@ bool Signal::processData(int16_t nullValue = 338)
 		this->currentData.min = relVal;
 	}
 
-	#ifndef __USING_COMPARATOR__
+	#ifndef USING_COMPARATOR
 
 	// Zero crossing check
 	if(this->waveDirection == true && relVal > this->upperThreshold) {

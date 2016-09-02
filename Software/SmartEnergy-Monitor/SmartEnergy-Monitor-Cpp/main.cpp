@@ -11,32 +11,24 @@
 #define F_CPU 16000000UL
 #endif
 
-// #define USING_COMPARATOR 1
-#define USING_ADC 1
-#define USING_UART 1
-
-#include <util/atomic.h>
-#include "includes/A2D.h"
 #include "includes/Interface.h"
 #include "includes/Display.h"
-#include "lib/AVRTools/new.h"
-#include "includes/UART.h"
+#include "includes/Heap.h"
 #include "includes/System.h"
 #include "includes/Signal.h"
+#include "includes/Power.h"
+
+#include <avr/io.h>
+
+using namespace System;
+
+Power *power = new Power();
 
 int main(void)
 {
-	System::init();
-	static A2D::A2DData data;
-	static unsigned long time;
-	Display* display = new Display;
-	Signal* voltage = new Signal(0);
-	while(true)
+	init();
+	for(;;)
 	{
-		if (voltage->isDataAvailable() == 1)
-		{
-			data = voltage->getData();
-		}
-		time = System::getTimeMicro();
+		power->processData();
 	}
 }

@@ -11,6 +11,7 @@
 
 Display::Display()
 {
+	this->buffer->push(this->encodeSync());
 }
 
 void Display::transmit(uint8_t character)
@@ -21,6 +22,7 @@ void Display::transmit(uint8_t character)
 void Display::transmitArray(uint8_t *characters, uint8_t decimal_index)
 {
 	this->encodeArray(characters, decimal_index);
+	UART::transmit(this->encodeSync());
 	UART::transmitArray(characters, 4);
 }
 

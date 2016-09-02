@@ -7,11 +7,11 @@
 
 
 #include "Buffer.h"
-#include "lib/AVRTools/new.h"
+#include "includes/Heap.h"
 
-// default constructor
-Buffer::Buffer() :
-length(16),
+Buffer::Buffer(uint8_t len) :
+length(len),
+storage(new uint8_t[len]()),
 head(0),
 tail(0),
 index(0)
@@ -43,6 +43,7 @@ uint8_t Buffer::pull()
 		this->head++;
 		return data;
 	}
+	return -1;
 }
 
 uint8_t Buffer::peek()
