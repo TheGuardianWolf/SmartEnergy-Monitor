@@ -17,7 +17,7 @@
 
 // ADC, SIGNAL, POWER
 
-static uint8_t ADC_channel = 2;
+volatile static uint8_t ADC_channel = 2;
 static int16_t nullVal = 338;
 static bool transferred = false;
 static uint8_t sampleCount = 0;
@@ -107,45 +107,55 @@ ISR(ADC_vect)
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		int16_t rawData = ADCL | (ADCH << 8);
-		int16_t data = rawData - nullVal;
-
-		if (ADC_channel == 0)
+		
+		if (ADC_channel == 2)
+		// First run null read
 		{
-			ADC_processData(&voltageData, data);
-			Signal_processData(&voltage, data, voltageData.timestamp);
-		}
-		else if (ADC_channel == 1)
-		{
-			ADC_processData(&currentData, data);
-			Signal_processData(&current, data, currentData.timestamp);
-			
-			Power_processData(data);
-			
-			sampleCount++;
-			if(sampleCount > sampleCountMax)
-			{
-				lastVoltage = voltage;
-				lastCurrent = current;
-				lastPower = power;
-				transferred = true;
-				sampleCount = 0;
-				Signal_clear(&voltage);
-				Signal_clear(&current);
-				Power_clear();
-				ADCSRA &= ~(1 << ADIE);
-			}
+			ADC_channel = 0;
+			nullVal = 338;//rawData;
 		}
 		else
 		{
-			nullVal = rawData;
+			int16_t data = rawData - nullVal;
+
+			ADC_channel++;
+			if (ADC_channel > 1)
+			{
+				ADC_channel = 0;
+			}
+			ADMUX &= 0b11100000;
+			ADMUX |= ADC_channel;
+
+			if (ADC_channel == 0)
+			{
+				ADC_processData(&voltageData, data);
+				Signal_processData(&voltage, data, voltageData.timestamp);
+			}
+			else if (ADC_channel == 1)
+			{
+				ADC_processData(&currentData, data);
+				Signal_processData(&current, data, currentData.timestamp);
+						
+				Power_processData(data);
+						
+				sampleCount++;
+				if(sampleCount > sampleCountMax)
+				{
+					lastVoltage = voltage;
+					lastCurrent = current;
+					lastPower = power;
+					transferred = true;
+					sampleCount = 0;
+					Signal_clear(&voltage);
+					Signal_clear(&current);
+					Power_clear();
+					ADCSRA &= ~(1 << ADIE);
+					ADC_channel = 2;
+					ADMUX &= 0b11111000;
+					ADMUX |= ADC_channel;
+				}
+			}
 		}
 
-		ADC_channel++;
-		if (ADC_channel > 1)
-		{
-			ADC_channel = 0;
-		}
-		ADMUX &= 0b11111000;
-		ADMUX |= ADC_channel;
 	}
 }

@@ -18,4 +18,5 @@
 int main(void)
 {
 	System_init();
+	while(1);
 }
