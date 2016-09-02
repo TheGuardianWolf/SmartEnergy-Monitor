@@ -7,9 +7,33 @@
 
 #include "Display.h"
 
-uint8_t Display_encodeChar(uint8_t character)
+#include <avr/io.h>
+
+Display::Display()
 {
-	switch (character)
+	this->buffer->push(this->encodeSync());
+}
+
+void Display::transmit(uint8_t character)
+{
+	UART::transmit(this->encode(character));
+}
+
+void Display::transmitArray(uint8_t *characters, uint8_t decimal_index)
+{
+	this->encodeArray(characters, decimal_index);
+	UART::transmit(this->encodeSync());
+	UART::transmitArray(characters, 4);
+}
+
+void Display::idle()
+{
+	UDR0 = this->encodeSync();
+}
+
+uint8_t Display::encode(uint8_t character)
+{
+	switch(character)
 	{
 		case '0':
 		return 0b01111110;
@@ -88,19 +112,19 @@ uint8_t Display_encodeChar(uint8_t character)
 	}
 }
 
-uint8_t Display_encodeSync()
-{
-	return 0b00000000;
-}
-
-void Display_encode(uint8_t *characters, uint8_t decimal_index)
+void Display::encodeArray(uint8_t *characters, uint8_t decimalIndex)
 {
 	for (uint8_t i = 0; i < 4; i++)
 	{
-		characters[i] = Display_encodeChar(characters[i]);
-		if (i == decimal_index)
+		characters[i] = Display::encode(characters[i]);
+		if (i == decimalIndex)
 		{
 			characters[i] |= (1 << 7); 				// Bit twiddling to enable the dp bit
 		}
 	}
+}
+
+uint8_t Display::encodeSync()
+{
+	return 0b00000000;
 }

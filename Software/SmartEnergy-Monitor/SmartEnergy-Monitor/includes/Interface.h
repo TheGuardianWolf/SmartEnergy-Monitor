@@ -13,12 +13,10 @@
 #define LED_OFF PORTB &= ~(1<<PORTB5)
 #define SWITCH_DOWN !(PINB & (1<<PB7))
 
-#include <avr/io.h>
-
 /**
  * Initialise the IO registers for reading/writing
  */
-void io_init();
+void Interface_init();
 
 
 
