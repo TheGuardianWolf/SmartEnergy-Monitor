@@ -20,8 +20,10 @@
 volatile static uint8_t ADC_channel = 2;
 static int16_t nullVal = 338;
 static bool transferred = false;
-static uint8_t sampleCount = 0;
-static const uint8_t sampleCountMax = 16;
+static uint16_t sampleCount = 0;
+static const uint16_t sampleCountMax = 2048;
+static uint8_t periodCount = 0;
+static uint8_t periodCountMax = 4;
 static struct ADCData voltageData = {0, 0};
 static struct ADCData currentData = {0, 0};
 static struct SignalData voltage = {0, -1024, 1024, 0, false, 0};
@@ -63,6 +65,7 @@ void Signal_processData(struct SignalData *storage, int16_t data, uint32_t lastT
 	if(storage->waveDirection == true && data > SIGNAL_THRESHOLD) {
 		storage->waveDirection = false;
 		storage->lastPeriod = lastTimestamp;
+		periodCount++;
 	}
 	else if(storage->waveDirection == false && data < -SIGNAL_THRESHOLD) {
 		storage->waveDirection = true;
@@ -139,13 +142,14 @@ ISR(ADC_vect)
 				Power_processData(data);
 						
 				sampleCount++;
-				if(sampleCount > sampleCountMax)
+				if((sampleCount > sampleCountMax) || (periodCount > periodCountMax))
 				{
 					lastVoltage = voltage;
 					lastCurrent = current;
 					lastPower = power;
 					transferred = true;
 					sampleCount = 0;
+					periodCount = 0;
 					Signal_clear(&voltage);
 					Signal_clear(&current);
 					Power_clear();

@@ -9,7 +9,9 @@
 #ifndef DISPLAY_H_
 #define DISPLAY_H_
 
-#include <avr/io.h>
+#include <stdint.h>
+
+void Display_init();
 
 /**
  * Encode one character for displaying on the LCD using the special UART

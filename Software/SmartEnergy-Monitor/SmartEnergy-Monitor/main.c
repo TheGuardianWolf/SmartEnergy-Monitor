@@ -11,9 +11,6 @@
 #define FALSE (!TRUE)
 
 #include "includes/System.h"
-#include "includes/ADC.h"
-#include <avr/io.h>
-
 
 int main(void)
 {

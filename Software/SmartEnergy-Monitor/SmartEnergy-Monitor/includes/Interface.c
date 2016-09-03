@@ -17,5 +17,25 @@
 	 DDRB	&= ~(1<<DDB7);						// PB1 As Input pin
 	 PORTB	|= 1<<DDB7;							// PB1 Activate internal pullUp resistor
 
-	 LED_OFF;									      // start with the LED off
+	 Interface_ledOff();									      // start with the LED off
+ }
+
+ void Interface_ledOn()
+ {
+	 PORTB |= (1 << PORTB5);
+ }
+
+ void Interface_ledOff()
+ {
+	 PORTB &= ~(1 << PORTB5);
+ }
+
+ void Interface_ledToggle()
+ {
+	 PORTB ^= (1 << PORTB5);
+ }
+
+ bool Interface_buttonIsPressed()
+ {
+	 return !(PINB & (1 << PINB7));
  }

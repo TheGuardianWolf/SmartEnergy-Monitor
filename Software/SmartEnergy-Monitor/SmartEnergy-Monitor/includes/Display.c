@@ -6,6 +6,19 @@
 */
 
 #include "Display.h"
+#include "UART.h"
+
+#include <avr/io.h>
+#include <util/atomic.h>
+
+void Display_init()
+{
+	TCCR0A = 0;
+	TCCR0B = (1 << CS02);
+	TIMSK0 = (1 << TOIE0);
+	TCNT0  = 0;
+	UART_transmit(Display_encodeSync());
+}
 
 uint8_t Display_encodeChar(uint8_t character)
 {
@@ -102,5 +115,13 @@ void Display_encode(uint8_t *characters, uint8_t decimal_index)
 		{
 			characters[i] |= (1 << 7); 				// Bit twiddling to enable the dp bit
 		}
+	}
+}
+
+ISR( TIMER0_OVF_vect )
+{
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		UART_transmit(Display_encodeSync());
 	}
 }

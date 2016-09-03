@@ -9,15 +9,19 @@
 #ifndef INTERACTIVE_H_
 #define INTERACTIVE_H_
 
-#define LED_ON PORTB |=  (1<<PORTB5)
-#define LED_OFF PORTB &= ~(1<<PORTB5)
-#define SWITCH_DOWN !(PINB & (1<<PB7))
+#include <stdbool.h>
 
 /**
  * Initialise the IO registers for reading/writing
  */
 void Interface_init();
 
+void Interface_ledOn();
 
+void Interface_ledOff();
+
+void Interface_ledToggle();
+
+bool Interface_buttonIsPressed();
 
 #endif /* INTERACTIVE_H_ */
