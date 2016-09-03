@@ -40,8 +40,6 @@ void ADC_init();
 
 void ADC_processData(struct ADCData *storage, int16_t data);
 
-void Signal_processData(struct SignalData *storage, int16_t data, uint32_t lastTimestamp);
-
 void Power_processData(int16_t data);
 
 

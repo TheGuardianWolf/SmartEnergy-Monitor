@@ -13,10 +13,17 @@
 #include <avr/io.h>
 #include <util/atomic.h>
 
+#define TRSFRD 
+#define STATE 0
+
 #define SIGNAL_THRESHOLD 10
+#define WAVEFORM_UP 0
+#define WAVEFORM_DOWN 1
+#define WAVEFORM_UNDETERMINED 2
 
 // ADC, SIGNAL, POWER
 
+uint8_t ADC_state = 0;
 volatile static uint8_t ADC_channel = 2;
 static int16_t nullVal = 338;
 static bool transferred = false;
@@ -24,12 +31,13 @@ static uint16_t sampleCount = 0;
 static const uint16_t sampleCountMax = 2048;
 static uint8_t periodCount = 0;
 static uint8_t periodCountMax = 4;
+static uint8_t initialACWaveDirection = WAVEFORM_UNDETERMINED;
 static struct ADCData voltageData = {0, 0};
 static struct ADCData currentData = {0, 0};
-static struct SignalData voltage = {0, -1024, 1024, 0, false, 0};
-static struct SignalData current = {0, -1024, 1024, 0, false, 0};
-static struct SignalData lastVoltage = {0, -1024, 1024, 0, false, 0};
-static struct SignalData lastCurrent = {0, -1024, 1024, 0, false, 0};
+static struct SignalData voltage = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
+static struct SignalData current = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
+static struct SignalData lastVoltage = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
+static struct SignalData lastCurrent = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
 static uint8_t instantPower = 0;
 static struct PowerData power = {0, -128, 127, 0};
 static struct PowerData lastPower = {0, -128, 127, 0};
@@ -45,31 +53,6 @@ void ADC_processData(struct ADCData *storage, int16_t data)
 {
 	storage->timestamp = System_getTimeMicro();
 	storage->value = data;
-}
-
-void Signal_processData(struct SignalData *storage, int16_t data, uint32_t lastTimestamp)
-{
-	storage->sum += data;
-	storage->squared += (uint32_t) ((int32_t) data * (int32_t) data);
-
-	if(data > storage->max)
-	{
-		storage->max = data;
-	}
-	if(data < storage->min)
-	{
-		storage->min = data;
-	}
-
-	// Zero crossing check, remove if using comparator
-	if(storage->waveDirection == true && data > SIGNAL_THRESHOLD) {
-		storage->waveDirection = false;
-		storage->lastPeriod = lastTimestamp;
-		periodCount++;
-	}
-	else if(storage->waveDirection == false && data < -SIGNAL_THRESHOLD) {
-		storage->waveDirection = true;
-	}
 }
 
 void Signal_clear(struct SignalData *storage)
@@ -111,13 +94,17 @@ ISR(ADC_vect)
 	{
 		int16_t rawData = ADCL | (ADCH << 8);
 		
-		if (ADC_channel == 2)
-		// First run null read
+		// initialization
+		if (ADC_state == 0)
 		{
 			ADC_channel = 0;
+			ADMUX &= 0b11100000;
+
 			nullVal = 338;//rawData;
+			ADC_state = 1;
 		}
-		else
+		// DC mode
+		else if (ADC_state == 1)
 		{
 			int16_t data = rawData - nullVal;
 
@@ -132,15 +119,184 @@ ISR(ADC_vect)
 			if (ADC_channel == 0)
 			{
 				ADC_processData(&voltageData, data);
-				Signal_processData(&voltage, data, voltageData.timestamp);
+
+				voltage.sum += data;
 			}
 			else if (ADC_channel == 1)
 			{
 				ADC_processData(&currentData, data);
-				Signal_processData(&current, data, currentData.timestamp);
-						
+
+				if(current.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
+					current.waveDirection = WAVEFORM_UP;
+					current.lastPeriod = currentData.timestamp;
+					ADC_state = 2;
+					Signal_clear(&voltage);
+					Signal_clear(&current);
+					Power_clear();
+
+					voltage.sum += data;
+					voltage.squared += (uint32_t) ((int32_t) data * (int32_t) data);
+					if(data > voltage.max)
+					{
+						voltage.max = data;
+					}
+					if(data < voltage.min)
+					{
+						voltage.min = data;
+					}
+
+					current.squared += (uint32_t) ((int32_t) data * (int32_t) data);
+					if(data > current.max)
+					{
+						current.max = data;
+					}
+					if(data < current.min)
+					{
+						current.min = data;
+					}
+				}
+				else if(current.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
+					current.waveDirection = WAVEFORM_DOWN;
+					current.lastPeriod = currentData.timestamp;
+					ADC_state = 2;
+					Signal_clear(&voltage);
+					Signal_clear(&current);
+					Power_clear();
+
+					voltage.sum += data;
+					voltage.squared += (uint32_t) ((int32_t) data * (int32_t) data);
+					if(data > voltage.max)
+					{
+						voltage.max = data;
+					}
+					if(data < voltage.min)
+					{
+						voltage.min = data;
+					}
+
+					current.squared += (uint32_t) ((int32_t) data * (int32_t) data);
+					if(data > current.max)
+					{
+						current.max = data;
+					}
+					if(data < current.min)
+					{
+						current.min = data;
+					}
+				}
+				else {
+					if(data > SIGNAL_THRESHOLD)
+					{
+						current.waveDirection = WAVEFORM_UP;
+					}
+					else if(data < -SIGNAL_THRESHOLD)
+					{
+						voltage.waveDirection = WAVEFORM_DOWN;
+					}
+				}
+				current.sum += data;
+							
 				Power_processData(data);
-						
+							
+				sampleCount++;
+				if(sampleCount > sampleCountMax)
+				{
+					lastVoltage = voltage;
+					lastCurrent = current;
+					lastPower = power;
+					transferred = true;
+					sampleCount = 0;
+					Signal_clear(&voltage);
+					Signal_clear(&current);
+					Power_clear();
+					ADCSRA &= ~(1 << ADIE);
+					ADC_channel = 2;
+					ADMUX &= 0b11111000;
+					ADMUX |= ADC_channel;
+				}
+			}
+
+		}
+		// AC mode
+		else if (ADC_state == 2)
+		{
+			int16_t data = rawData - nullVal;
+
+			ADC_channel++;
+			if (ADC_channel > 1)
+			{
+				ADC_channel = 0;
+			}
+			ADMUX &= 0b11100000;
+			ADMUX |= ADC_channel;
+
+			if (ADC_channel == 0)
+			{
+				ADC_processData(&voltageData, data);
+				voltage.sum += data;
+				voltage.squared += (uint32_t) ((int32_t) data * (int32_t) data);
+
+				if(data > voltage.max)
+				{
+					voltage.max = data;
+				}
+				if(data < voltage.min)
+				{
+					voltage.min = data;
+				}
+
+				// Zero crossing check, remove if using comparator
+				if(voltage.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
+					voltage.waveDirection = WAVEFORM_UP;
+					if(initialACWaveDirection == WAVEFORM_UP)
+					{
+						voltage.lastPeriod = voltageData.timestamp;
+					}
+				}
+				else if(voltage.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
+					voltage.waveDirection = WAVEFORM_DOWN;
+					if(initialACWaveDirection == WAVEFORM_DOWN)
+					{
+						voltage.lastPeriod = voltageData.timestamp;
+					}
+				}
+			}
+			else if (ADC_channel == 1)
+			{
+				ADC_processData(&currentData, data);
+				
+				current.sum += data;
+				current.squared += (uint32_t) ((int32_t) data * (int32_t) data);
+
+				if(data > current.max)
+				{
+					current.max = data;
+				}
+				if(data < current.min)
+				{
+					current.min = data;
+				}
+
+				// Zero crossing check, remove if using comparator
+				if(current.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
+					current.waveDirection = WAVEFORM_UP;
+					if(initialACWaveDirection == WAVEFORM_UP)
+					{
+						current.lastPeriod = voltageData.timestamp;
+						periodCount++;
+					}
+				}
+				else if(current.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
+					current.waveDirection = WAVEFORM_DOWN;
+					if(initialACWaveDirection == WAVEFORM_DOWN)
+					{
+						current.lastPeriod = voltageData.timestamp;
+						periodCount++;
+					}
+				}
+				
+				Power_processData(data);
+				
 				sampleCount++;
 				if((sampleCount > sampleCountMax) || (periodCount > periodCountMax))
 				{
@@ -160,6 +316,5 @@ ISR(ADC_vect)
 				}
 			}
 		}
-
 	}
 }
