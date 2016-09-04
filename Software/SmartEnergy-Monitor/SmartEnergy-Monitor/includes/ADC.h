@@ -20,11 +20,13 @@ struct ADCData
 
 struct SignalData
 {
+	uint16_t sampleCount;
 	int16_t sum;
 	int16_t max;
 	int16_t min;
 	uint32_t squared;
 	bool waveDirection;
+	uint8_t periodCount;
 	uint16_t lastPeriod;
 };
 
@@ -33,14 +35,17 @@ struct PowerData
 	int16_t sum;
 	int8_t max;
 	int8_t min;
-	uint32_t periodDifferenceSum;
+	uint16_t periodDifferenceSum;
 };
 
 uint8_t ADC_state;
+uint8_t lastPeriodCount;
 bool Signal_mainDataReady;
-uint32_t Signal_acSamplingStartTime;
-uint32_t Signal_acSamplingStopTime;
 const float ADC_sensitivity;
+uint16_t lastFrequency;
+struct PowerData lastPower;
+struct SignalData lastVoltage;
+struct SignalData lastCurrent;
 
 void ADC_init();
 

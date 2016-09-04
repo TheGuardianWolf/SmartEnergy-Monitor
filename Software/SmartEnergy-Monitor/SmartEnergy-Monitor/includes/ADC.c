@@ -21,27 +21,29 @@
 // ADC, SIGNAL, POWER
 
 uint8_t ADC_state = 0;
+uint8_t lastPeriodCount = 0;
 bool Signal_mainDataReady = false;
-uint32_t Signal_acSamplingStartTime = 0;
-uint32_t Signal_acSamplingStopTime = 0;
 const float ADC_sensitivity = 4.882813e-3;
+uint16_t lastFrequency = 0;
+struct PowerData lastPower = {0, -128, 127, 0};
+struct SignalData lastVoltage = {0, 0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
+struct SignalData lastCurrent = {0, 0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
 
 static uint8_t ADC_channel = 2;
 static int16_t nullVal = 338;
-static uint16_t sampleCount = 0;
-static const uint16_t sampleCountMax = 2048;
+static const uint16_t sampleCountMax = 1024;
+static uint32_t acSamplingStartTime = 0;
+static uint32_t acSamplingStopTime = 0;
 static uint8_t periodCount = 0;
-static uint8_t periodCountMax = 3;
+static uint8_t periodCountMax = 2;
 static uint8_t initialACWaveDirection = WAVEFORM_UNDETERMINED;
 static struct ADCData voltageData = {0, 0};
 static struct ADCData currentData = {0, 0};
-static struct SignalData voltage = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
-static struct SignalData current = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
-struct SignalData lastVoltage = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
-struct SignalData lastCurrent = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
+static struct SignalData voltage = {0, 0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
+static struct SignalData current = {0, 0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
 static uint8_t instantPower = 0;
 static struct PowerData power = {0, -128, 127, 0};
-struct PowerData lastPower = {0, -128, 127, 0};
+
 
 void ADC_init()
 {
@@ -56,13 +58,14 @@ void ADC_processData(struct ADCData *storage, int16_t data)
 	storage->value = data;
 }
 
-//float ADC_convertToValue(int16_t adcValue)
-//{
-	//return adcValue * adcSensitivity;
-//}
+float ADC_convertToValue(int16_t adcValue)
+{
+	return adcValue * ADC_sensitivity;
+}
 
 void Signal_clear(struct SignalData *storage)
 {
+	storage->sampleCount = 0;
 	storage->lastPeriod = 0;
 	storage->max = -1024;
 	storage->min = 1024;
@@ -132,8 +135,9 @@ ISR(ADC_vect)
 			{
 				ADC_processData(&currentData, data);
 
+				// Zero crossing check, remove if using comparator
 				if(current.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
-					Signal_acSamplingStartTime = System_getTimeMicro();
+					acSamplingStartTime = System_getTimeMicro();
 					current.waveDirection = WAVEFORM_UP;
 					current.lastPeriod = currentData.timestamp;
 					ADC_state = 2;
@@ -141,6 +145,7 @@ ISR(ADC_vect)
 					Signal_clear(&current);
 					Power_clear();
 
+					voltage.sampleCount++;
 					voltage.sum += data;
 					voltage.squared += (uint32_t) ((int32_t) data * (int32_t) data);
 					if(data > voltage.max)
@@ -163,7 +168,7 @@ ISR(ADC_vect)
 					}
 				}
 				else if(current.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
-					Signal_acSamplingStartTime = System_getTimeMicro();
+					acSamplingStartTime = System_getTimeMicro();
 					current.waveDirection = WAVEFORM_DOWN;
 					current.lastPeriod = currentData.timestamp;
 					ADC_state = 2;
@@ -202,18 +207,17 @@ ISR(ADC_vect)
 						voltage.waveDirection = WAVEFORM_DOWN;
 					}
 				}
+				current.sampleCount++;
 				current.sum += data;
 							
 				Power_processData(data);
-							
-				sampleCount++;
-				if(sampleCount > sampleCountMax)
+								
+				if(current.sampleCount > sampleCountMax)
 				{
 					lastVoltage = voltage;
 					lastCurrent = current;
 					lastPower = power;
 					Signal_mainDataReady = true;
-					sampleCount = 0;
 					Signal_clear(&voltage);
 					Signal_clear(&current);
 					Power_clear();
@@ -241,6 +245,7 @@ ISR(ADC_vect)
 			if (ADC_channel == 0)
 			{
 				ADC_processData(&voltageData, data);
+				voltage.sampleCount++;
 				voltage.sum += data;
 				voltage.squared += (uint32_t) ((int32_t) data * (int32_t) data);
 
@@ -273,6 +278,7 @@ ISR(ADC_vect)
 			{
 				ADC_processData(&currentData, data);
 				
+				current.sampleCount++;
 				current.sum += data;
 				current.squared += (uint32_t) ((int32_t) data * (int32_t) data);
 
@@ -305,21 +311,21 @@ ISR(ADC_vect)
 				
 				Power_processData(data);
 				
-				sampleCount++;
-				if((sampleCount > sampleCountMax) || (periodCount > periodCountMax))
+				if((current.sampleCount > sampleCountMax) || (periodCount > periodCountMax))
 				{
-					Signal_acSamplingStopTime = System_getTimeMicro();
+					acSamplingStopTime = System_getTimeMicro();
+					lastFrequency = periodCount / ((float) (acSamplingStartTime - acSamplingStopTime) / 1000000);
+					lastPeriodCount = periodCount;
 					lastVoltage = voltage;
 					lastCurrent = current;
 					lastPower = power;
 					Signal_mainDataReady = true;
-					sampleCount = 0;
 					periodCount = 0;
 					Signal_clear(&voltage);
 					Signal_clear(&current);
 					Power_clear();
-					ADCSRA &= ~(1 << ADIE);
 					ADC_channel = 2;
+					ADC_state = 0;
 					ADMUX &= 0b11111000;
 					ADMUX |= ADC_channel;
 				}

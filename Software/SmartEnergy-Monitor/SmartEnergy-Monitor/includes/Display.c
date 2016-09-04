@@ -8,8 +8,12 @@
 #include "Display.h"
 #include "UART.h"
 
+#include <stdlib.h>
 #include <avr/io.h>
 #include <util/atomic.h>
+
+uint8_t Display_state = 0;
+struct DisplayValues Display_values = {0, 0, 0};
 
 void Display_init()
 {
@@ -106,22 +110,44 @@ uint8_t Display_encodeSync()
 	return 0b00000000;
 }
 
-void Display_encode(uint8_t *characters, uint8_t decimal_index)
+void Display_encode(uint8_t *characters, uint8_t decimalIndex)
 {
 	for (uint8_t i = 0; i < 4; i++)
 	{
 		characters[i] = Display_encodeChar(characters[i]);
-		if (i == decimal_index)
+		if (i == decimalIndex)
 		{
 			characters[i] |= (1 << 7); 				// Bit twiddling to enable the dp bit
 		}
 	}
 }
 
+void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
+{
+	int16_t dec = (value + 0.005) * 1000;
+	if (dec > 9999) {
+		result[0] =  dec / 10000 % 10 + '0';
+		*decimalIndex = 1;
+	}
+	else
+	{
+		result[0] = dec / 1000 % 10 + '0';
+		*decimalIndex = 0;
+	}
+	result[1] = dec / 100 % 10 + '0'; 
+	result[2] = dec / 10 % 10 + '0';
+	result[3] = dec % 10 + '0';
+}
+
 ISR( TIMER0_OVF_vect )
 {
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
+		uint8_t tempArray[4];
+		uint8_t tempDecimalIndex = 0;
+		Display_floatToChar(Display_values.vRMS, tempArray, &tempDecimalIndex);
+		Display_encode(tempArray, tempDecimalIndex);
 		UART_transmit(Display_encodeSync());
+		UART_transmitArray(tempArray, 4);
 	}
 }

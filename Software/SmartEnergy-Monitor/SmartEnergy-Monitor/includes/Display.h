@@ -11,6 +11,16 @@
 
 #include <stdint.h>
 
+struct DisplayValues
+{
+	float vRMS;
+	float iRMS;
+	float pAVG;
+};
+
+uint8_t Display_state;
+struct DisplayValues Display_values;
+
 void Display_init();
 
 /**
@@ -33,5 +43,7 @@ uint8_t Display_encodeSync();
  * @param decimal_index The index where the decimal should be placed.
  */
 void Display_encode(uint8_t *characters, uint8_t decimal_index);
+
+void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex);
 
 #endif /* DISPLAY_H_ */
