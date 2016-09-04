@@ -13,9 +13,6 @@
 #include <avr/io.h>
 #include <util/atomic.h>
 
-#define TRSFRD 
-#define STATE 0
-
 #define SIGNAL_THRESHOLD 10
 #define WAVEFORM_UP 0
 #define WAVEFORM_DOWN 1
@@ -24,23 +21,28 @@
 // ADC, SIGNAL, POWER
 
 uint8_t ADC_state = 0;
-volatile static uint8_t ADC_channel = 2;
+bool Signal_mainDataReady = false;
+uint32_t Signal_acSamplingStartTime = 0;
+uint32_t Signal_acSamplingStopTime = 0;
+
+const static float adcSensitivity = 4.882813e-3;
+
+static uint8_t ADC_channel = 2;
 static int16_t nullVal = 338;
-static bool transferred = false;
 static uint16_t sampleCount = 0;
 static const uint16_t sampleCountMax = 2048;
 static uint8_t periodCount = 0;
-static uint8_t periodCountMax = 4;
+static uint8_t periodCountMax = 3;
 static uint8_t initialACWaveDirection = WAVEFORM_UNDETERMINED;
 static struct ADCData voltageData = {0, 0};
 static struct ADCData currentData = {0, 0};
 static struct SignalData voltage = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
 static struct SignalData current = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
-static struct SignalData lastVoltage = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
-static struct SignalData lastCurrent = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
+struct SignalData lastVoltage = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
+struct SignalData lastCurrent = {0, -1024, 1024, 0, WAVEFORM_UNDETERMINED, 0};
 static uint8_t instantPower = 0;
 static struct PowerData power = {0, -128, 127, 0};
-static struct PowerData lastPower = {0, -128, 127, 0};
+struct PowerData lastPower = {0, -128, 127, 0};
 
 void ADC_init()
 {
@@ -54,6 +56,11 @@ void ADC_processData(struct ADCData *storage, int16_t data)
 	storage->timestamp = System_getTimeMicro();
 	storage->value = data;
 }
+
+//float ADC_convertToValue(int16_t adcValue)
+//{
+	//return adcValue * adcSensitivity;
+//}
 
 void Signal_clear(struct SignalData *storage)
 {
@@ -127,6 +134,7 @@ ISR(ADC_vect)
 				ADC_processData(&currentData, data);
 
 				if(current.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
+					Signal_acSamplingStartTime = System_getTimeMicro();
 					current.waveDirection = WAVEFORM_UP;
 					current.lastPeriod = currentData.timestamp;
 					ADC_state = 2;
@@ -156,6 +164,7 @@ ISR(ADC_vect)
 					}
 				}
 				else if(current.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
+					Signal_acSamplingStartTime = System_getTimeMicro();
 					current.waveDirection = WAVEFORM_DOWN;
 					current.lastPeriod = currentData.timestamp;
 					ADC_state = 2;
@@ -204,7 +213,7 @@ ISR(ADC_vect)
 					lastVoltage = voltage;
 					lastCurrent = current;
 					lastPower = power;
-					transferred = true;
+					Signal_mainDataReady = true;
 					sampleCount = 0;
 					Signal_clear(&voltage);
 					Signal_clear(&current);
@@ -300,10 +309,11 @@ ISR(ADC_vect)
 				sampleCount++;
 				if((sampleCount > sampleCountMax) || (periodCount > periodCountMax))
 				{
+					Signal_acSamplingStopTime = System_getTimeMicro();
 					lastVoltage = voltage;
 					lastCurrent = current;
 					lastPower = power;
-					transferred = true;
+					Signal_mainDataReady = true;
 					sampleCount = 0;
 					periodCount = 0;
 					Signal_clear(&voltage);
