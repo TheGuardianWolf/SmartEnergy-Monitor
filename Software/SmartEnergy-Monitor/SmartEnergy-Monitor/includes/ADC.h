@@ -25,7 +25,7 @@ struct SignalData
 	int16_t min;
 	uint32_t squared;
 	bool waveDirection;
-	uint32_t lastPeriod;
+	uint16_t lastPeriod;
 };
 
 struct PowerData
@@ -39,6 +39,10 @@ struct PowerData
 void ADC_init();
 
 void ADC_processData(struct ADCData *storage, int16_t data);
+
+//float ADC_convertToValue(int16_t adcValue);
+
+void Signal_clear(struct SignalData *storage)
 
 void Power_processData(int16_t data);
 
