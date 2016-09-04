@@ -36,13 +36,19 @@ struct PowerData
 	uint32_t periodDifferenceSum;
 };
 
+uint8_t ADC_state;
+bool Signal_mainDataReady;
+uint32_t Signal_acSamplingStartTime;
+uint32_t Signal_acSamplingStopTime;
+const float ADC_sensitivity;
+
 void ADC_init();
 
 void ADC_processData(struct ADCData *storage, int16_t data);
 
-//float ADC_convertToValue(int16_t adcValue);
+float ADC_convertToValue(int16_t adcValue);
 
-void Signal_clear(struct SignalData *storage)
+void Signal_clear(struct SignalData *storage);
 
 void Power_processData(int16_t data);
 

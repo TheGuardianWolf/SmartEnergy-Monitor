@@ -24,8 +24,7 @@ uint8_t ADC_state = 0;
 bool Signal_mainDataReady = false;
 uint32_t Signal_acSamplingStartTime = 0;
 uint32_t Signal_acSamplingStopTime = 0;
-
-const static float adcSensitivity = 4.882813e-3;
+const float ADC_sensitivity = 4.882813e-3;
 
 static uint8_t ADC_channel = 2;
 static int16_t nullVal = 338;
