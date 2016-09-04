@@ -16,6 +16,8 @@ struct DisplayValues
 	float vRMS;
 	float iRMS;
 	float pAVG;
+	float frequency;
+	float phaseDifference;
 };
 
 uint8_t Display_state;

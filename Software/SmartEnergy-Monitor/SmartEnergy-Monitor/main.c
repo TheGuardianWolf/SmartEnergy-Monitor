@@ -25,8 +25,8 @@ static int16_t powerSum = 0;
 static int16_t powerSumArray[50];
 static uint16_t periodDifferenceSum = 0;
 static uint16_t periodDifferenceSumArray[50];
-static uint16_t frequencySum = 0;
-static uint16_t frequencySumArray[50];
+static uint16_t periodSum = 0;
+static uint16_t periodSumArray[50];
 static uint16_t sampleCountSum = 0;
 static uint16_t sampleCountSumArray[50];
 static float sampleCountAverage = 0;
@@ -57,15 +57,13 @@ int main(void)
 	arrayClear(currentSquaredArray);
 	arrayClear(powerSumArray);
 	uArrayClear(periodDifferenceSumArray);
-	uArrayClear(frequencySumArray);
+	uArrayClear(periodSumArray);
 
 	// The Loop
 	for(;;)
 	{
 		if(Signal_mainDataReady)
 		{
-			TCNT1 = 0;
-
 			voltageSquared -= voltageSquaredArray[arrayCount];
 			voltageSquared += lastVoltage.squared / lastVoltage.sampleCount;
 			voltageSquaredArray[arrayCount] = lastVoltage.squared;
@@ -79,12 +77,12 @@ int main(void)
 			powerSumArray[arrayCount] = lastPower.sum;
 
 			periodDifferenceSum -= periodDifferenceSumArray[arrayCount];
-			periodDifferenceSum += lastPower.periodDifferenceSum;
-			periodDifferenceSumArray[arrayCount] = lastPower.periodDifferenceSum;
+			periodDifferenceSum += lastVoltageCurrentTimeDifferenceSum;
+			periodDifferenceSumArray[arrayCount] = lastVoltageCurrentTimeDifferenceSum;
 
-			frequencySum -= frequencySumArray[arrayCount];
-			frequencySum += lastFrequency;
-			frequencySumArray[arrayCount] = lastFrequency;
+			periodSum -= periodSumArray[arrayCount];
+			periodSum += lastPeriodTimeSum;
+			periodSumArray[arrayCount] = lastPeriodTimeSum;
 
 			sampleCountSum -= sampleCountSumArray[arrayCount];
 			sampleCountSum += lastCurrent.sampleCount;
@@ -103,6 +101,8 @@ int main(void)
 				Display_values.vRMS = sqrt((float) voltageSquared / (arrayCountMax * sampleCountAverage)) * vScale; 
 				Display_values.iRMS = sqrt((float) currentSquared / (arrayCountMax * sampleCountAverage)) * iScale; 
 				Display_values.pAVG = (float) powerSum / (arrayCountMax * sampleCountAverage) * vScale * iScale; 
+				Display_values.frequency = (float) (periodCountMax * arrayCountMax) / periodSum;
+				Display_values.phaseDifference = ((float) periodSum / (periodCountMax * arrayCountMax)) * 360 / ((float) periodDifferenceSum / (periodCountMax * arrayCountMax));
 			}
 
 		}
