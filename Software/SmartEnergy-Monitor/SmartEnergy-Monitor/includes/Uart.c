@@ -40,7 +40,7 @@ static bool Buffer_push(uint8_t data)
 {
 	if (!Buffer_isFull())
 	{
-		Buffer_buffer[(Buffer_frontIndex + Buffer_itemCount) % Buffer_size] = data;
+		Buffer_buffer[Buffer_frontIndex + Buffer_itemCount] = data;
 		Buffer_itemCount++;
 		return true;
 	}
