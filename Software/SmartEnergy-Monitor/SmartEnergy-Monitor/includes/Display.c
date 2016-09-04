@@ -13,7 +13,7 @@
 #include <util/atomic.h>
 
 uint8_t Display_state = 0;
-struct DisplayValues Display_values = {0, 0, 0};
+struct DisplayValues Display_values = {0, 0, 0, 0, 0};
 
 void Display_init()
 {

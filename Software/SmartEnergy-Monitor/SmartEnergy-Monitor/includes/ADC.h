@@ -25,7 +25,6 @@ struct SignalData
 	int16_t max;
 	int16_t min;
 	uint32_t squared;
-	bool waveDirection;
 	uint8_t periodCount;
 	uint16_t lastPeriod;
 };
@@ -35,19 +34,21 @@ struct PowerData
 	int16_t sum;
 	int8_t max;
 	int8_t min;
-	uint16_t periodDifferenceSum;
 };
 
-uint8_t ADC_state;
-uint8_t lastPeriodCount;
+volatile uint8_t ADC_state;
+uint8_t periodCountMax;
 bool Signal_mainDataReady;
 const float ADC_sensitivity;
-uint16_t lastFrequency;
+uint16_t lastPeriodTimeSum;
+int16_t lastVoltageCurrentTimeDifferenceSum;
 struct PowerData lastPower;
 struct SignalData lastVoltage;
 struct SignalData lastCurrent;
 
 void ADC_init();
+
+void ADC_initComparators();
 
 void ADC_processData(struct ADCData *storage, int16_t data);
 
@@ -55,7 +56,7 @@ float ADC_convertToValue(int16_t adcValue);
 
 void Signal_clear(struct SignalData *storage);
 
-void Power_processData(int16_t data);
+void Power_processData();
 
 
 #endif /* ADC_H_ */
