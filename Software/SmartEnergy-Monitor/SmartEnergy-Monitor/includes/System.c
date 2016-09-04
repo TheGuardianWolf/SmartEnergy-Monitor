@@ -45,7 +45,6 @@ uint32_t System_getTimeMicro()
 	uint32_t time;
 	NONATOMIC_BLOCK(NONATOMIC_RESTORESTATE)
 	{
-		(void) time;
 	}
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{

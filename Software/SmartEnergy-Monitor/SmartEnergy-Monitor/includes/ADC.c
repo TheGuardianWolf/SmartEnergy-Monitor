@@ -20,7 +20,7 @@
 
 // ADC, SIGNAL, POWER
 
-uint8_t ADC_state = 0;
+volatile uint8_t ADC_state = 0;
 uint8_t lastPeriodCount = 0;
 bool Signal_mainDataReady = false;
 const float ADC_sensitivity = 4.882813e-3;
@@ -99,156 +99,53 @@ void Power_clear()
 
 ISR(ADC_vect)
 {
-	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-	{
-		int16_t rawData = ADCL | (ADCH << 8);
+	int16_t rawData = ADCL | (ADCH << 8);
 		
-		// initialization
-		if (ADC_state == 0)
+	// initialization
+	if (ADC_state == 0)
+	{
+		ADC_channel = 0;
+		ADMUX &= 0b11100000;
+
+		nullVal = 338;//rawData;
+		ADC_state = 1;
+	}
+	// DC mode
+	else if (ADC_state == 1)
+	{
+		int16_t data = rawData - nullVal;
+
+		ADC_channel++;
+		if (ADC_channel > 1)
 		{
 			ADC_channel = 0;
-			ADMUX &= 0b11100000;
-
-			nullVal = 338;//rawData;
-			ADC_state = 1;
 		}
-		// DC mode
-		else if (ADC_state == 1)
+		ADMUX &= 0b11100000;
+		ADMUX |= ADC_channel;
+
+		if (ADC_channel == 0)
 		{
-			int16_t data = rawData - nullVal;
+			ADC_processData(&voltageData, data);
 
-			ADC_channel++;
-			if (ADC_channel > 1)
-			{
-				ADC_channel = 0;
-			}
-			ADMUX &= 0b11100000;
-			ADMUX |= ADC_channel;
-
-			if (ADC_channel == 0)
-			{
-				ADC_processData(&voltageData, data);
-
-				voltage.sum += data;
-			}
-			else if (ADC_channel == 1)
-			{
-				ADC_processData(&currentData, data);
-
-				// Zero crossing check, remove if using comparator
-				if(current.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
-					acSamplingStartTime = System_getTimeMicro();
-					current.waveDirection = WAVEFORM_UP;
-					current.lastPeriod = currentData.timestamp;
-					ADC_state = 2;
-					Signal_clear(&voltage);
-					Signal_clear(&current);
-					Power_clear();
-
-					voltage.sampleCount++;
-					voltage.sum += data;
-					voltage.squared += (uint32_t) ((int32_t) data * (int32_t) data);
-					if(data > voltage.max)
-					{
-						voltage.max = data;
-					}
-					if(data < voltage.min)
-					{
-						voltage.min = data;
-					}
-
-					current.squared += (uint32_t) ((int32_t) data * (int32_t) data);
-					if(data > current.max)
-					{
-						current.max = data;
-					}
-					if(data < current.min)
-					{
-						current.min = data;
-					}
-				}
-				else if(current.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
-					acSamplingStartTime = System_getTimeMicro();
-					current.waveDirection = WAVEFORM_DOWN;
-					current.lastPeriod = currentData.timestamp;
-					ADC_state = 2;
-					Signal_clear(&voltage);
-					Signal_clear(&current);
-					Power_clear();
-
-					voltage.sum += data;
-					voltage.squared += (uint32_t) ((int32_t) data * (int32_t) data);
-					if(data > voltage.max)
-					{
-						voltage.max = data;
-					}
-					if(data < voltage.min)
-					{
-						voltage.min = data;
-					}
-
-					current.squared += (uint32_t) ((int32_t) data * (int32_t) data);
-					if(data > current.max)
-					{
-						current.max = data;
-					}
-					if(data < current.min)
-					{
-						current.min = data;
-					}
-				}
-				else {
-					if(data > SIGNAL_THRESHOLD)
-					{
-						current.waveDirection = WAVEFORM_UP;
-					}
-					else if(data < -SIGNAL_THRESHOLD)
-					{
-						voltage.waveDirection = WAVEFORM_DOWN;
-					}
-				}
-				current.sampleCount++;
-				current.sum += data;
-							
-				Power_processData(data);
-								
-				if(current.sampleCount > sampleCountMax)
-				{
-					lastVoltage = voltage;
-					lastCurrent = current;
-					lastPower = power;
-					Signal_mainDataReady = true;
-					Signal_clear(&voltage);
-					Signal_clear(&current);
-					Power_clear();
-					ADCSRA &= ~(1 << ADIE);
-					ADC_channel = 2;
-					ADMUX &= 0b11111000;
-					ADMUX |= ADC_channel;
-				}
-			}
-
+			voltage.sum += data;
 		}
-		// AC mode
-		else if (ADC_state == 2)
+		else if (ADC_channel == 1)
 		{
-			int16_t data = rawData - nullVal;
+			ADC_processData(&currentData, data);
 
-			ADC_channel++;
-			if (ADC_channel > 1)
-			{
-				ADC_channel = 0;
-			}
-			ADMUX &= 0b11100000;
-			ADMUX |= ADC_channel;
+			// Zero crossing check, remove if using comparator
+			if(current.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
+				acSamplingStartTime = System_getTimeMicro();
+				current.waveDirection = WAVEFORM_UP;
+				current.lastPeriod = currentData.timestamp;
+				ADC_state = 2;
+				Signal_clear(&voltage);
+				Signal_clear(&current);
+				Power_clear();
 
-			if (ADC_channel == 0)
-			{
-				ADC_processData(&voltageData, data);
 				voltage.sampleCount++;
 				voltage.sum += data;
 				voltage.squared += (uint32_t) ((int32_t) data * (int32_t) data);
-
 				if(data > voltage.max)
 				{
 					voltage.max = data;
@@ -258,30 +155,7 @@ ISR(ADC_vect)
 					voltage.min = data;
 				}
 
-				// Zero crossing check, remove if using comparator
-				if(voltage.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
-					voltage.waveDirection = WAVEFORM_UP;
-					if(initialACWaveDirection == WAVEFORM_UP)
-					{
-						voltage.lastPeriod = voltageData.timestamp;
-					}
-				}
-				else if(voltage.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
-					voltage.waveDirection = WAVEFORM_DOWN;
-					if(initialACWaveDirection == WAVEFORM_DOWN)
-					{
-						voltage.lastPeriod = voltageData.timestamp;
-					}
-				}
-			}
-			else if (ADC_channel == 1)
-			{
-				ADC_processData(&currentData, data);
-				
-				current.sampleCount++;
-				current.sum += data;
 				current.squared += (uint32_t) ((int32_t) data * (int32_t) data);
-
 				if(data > current.max)
 				{
 					current.max = data;
@@ -290,45 +164,168 @@ ISR(ADC_vect)
 				{
 					current.min = data;
 				}
+			}
+			else if(current.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
+				acSamplingStartTime = System_getTimeMicro();
+				current.waveDirection = WAVEFORM_DOWN;
+				current.lastPeriod = currentData.timestamp;
+				ADC_state = 2;
+				Signal_clear(&voltage);
+				Signal_clear(&current);
+				Power_clear();
 
-				// Zero crossing check, remove if using comparator
-				if(current.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
-					current.waveDirection = WAVEFORM_UP;
-					if(initialACWaveDirection == WAVEFORM_UP)
-					{
-						current.lastPeriod = voltageData.timestamp;
-						periodCount++;
-					}
-				}
-				else if(current.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
-					current.waveDirection = WAVEFORM_DOWN;
-					if(initialACWaveDirection == WAVEFORM_DOWN)
-					{
-						current.lastPeriod = voltageData.timestamp;
-						periodCount++;
-					}
-				}
-				
-				Power_processData(data);
-				
-				if((current.sampleCount > sampleCountMax) || (periodCount > periodCountMax))
+				voltage.sum += data;
+				voltage.squared += (uint32_t) ((int32_t) data * (int32_t) data);
+				if(data > voltage.max)
 				{
-					acSamplingStopTime = System_getTimeMicro();
-					lastFrequency = periodCount / ((float) (acSamplingStartTime - acSamplingStopTime) / 1000000);
-					lastPeriodCount = periodCount;
-					lastVoltage = voltage;
-					lastCurrent = current;
-					lastPower = power;
-					Signal_mainDataReady = true;
-					periodCount = 0;
-					Signal_clear(&voltage);
-					Signal_clear(&current);
-					Power_clear();
-					ADC_channel = 2;
-					ADC_state = 0;
-					ADMUX &= 0b11111000;
-					ADMUX |= ADC_channel;
+					voltage.max = data;
 				}
+				if(data < voltage.min)
+				{
+					voltage.min = data;
+				}
+
+				current.squared += (uint32_t) ((int32_t) data * (int32_t) data);
+				if(data > current.max)
+				{
+					current.max = data;
+				}
+				if(data < current.min)
+				{
+					current.min = data;
+				}
+			}
+			else {
+				if(data > SIGNAL_THRESHOLD)
+				{
+					current.waveDirection = WAVEFORM_UP;
+				}
+				else if(data < -SIGNAL_THRESHOLD)
+				{
+					voltage.waveDirection = WAVEFORM_DOWN;
+				}
+			}
+			current.sampleCount++;
+			current.sum += data;
+							
+			Power_processData(data);
+								
+			if(current.sampleCount > sampleCountMax)
+			{
+				lastVoltage = voltage;
+				lastCurrent = current;
+				lastPower = power;
+				Signal_mainDataReady = true;
+				Signal_clear(&voltage);
+				Signal_clear(&current);
+				Power_clear();
+				ADCSRA &= ~(1 << ADIE);
+				ADC_channel = 2;
+				ADMUX &= 0b11111000;
+				ADMUX |= ADC_channel;
+			}
+		}
+
+	}
+	// AC mode
+	else if (ADC_state == 2)
+	{
+		int16_t data = rawData - nullVal;
+
+		ADC_channel++;
+		if (ADC_channel > 1)
+		{
+			ADC_channel = 0;
+		}
+		ADMUX &= 0b11100000;
+		ADMUX |= ADC_channel;
+
+		if (ADC_channel == 0)
+		{
+			ADC_processData(&voltageData, data);
+			voltage.sampleCount++;
+			voltage.sum += data;
+			voltage.squared += (uint32_t) ((int32_t) data * (int32_t) data);
+
+			if(data > voltage.max)
+			{
+				voltage.max = data;
+			}
+			if(data < voltage.min)
+			{
+				voltage.min = data;
+			}
+
+			// Zero crossing check, remove if using comparator
+			if(voltage.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
+				voltage.waveDirection = WAVEFORM_UP;
+				if(initialACWaveDirection == WAVEFORM_UP)
+				{
+					voltage.lastPeriod = voltageData.timestamp;
+				}
+			}
+			else if(voltage.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
+				voltage.waveDirection = WAVEFORM_DOWN;
+				if(initialACWaveDirection == WAVEFORM_DOWN)
+				{
+					voltage.lastPeriod = voltageData.timestamp;
+				}
+			}
+		}
+		else if (ADC_channel == 1)
+		{
+			ADC_processData(&currentData, data);
+				
+			current.sampleCount++;
+			current.sum += data;
+			current.squared += (uint32_t) ((int32_t) data * (int32_t) data);
+
+			if(data > current.max)
+			{
+				current.max = data;
+			}
+			if(data < current.min)
+			{
+				current.min = data;
+			}
+
+			// Zero crossing check, remove if using comparator
+			if(current.waveDirection == WAVEFORM_DOWN && data > SIGNAL_THRESHOLD) {
+				current.waveDirection = WAVEFORM_UP;
+				if(initialACWaveDirection == WAVEFORM_UP)
+				{
+					current.lastPeriod = voltageData.timestamp;
+					periodCount++;
+				}
+			}
+			else if(current.waveDirection == WAVEFORM_UP && data < -SIGNAL_THRESHOLD) {
+				current.waveDirection = WAVEFORM_DOWN;
+				if(initialACWaveDirection == WAVEFORM_DOWN)
+				{
+					current.lastPeriod = voltageData.timestamp;
+					periodCount++;
+				}
+			}
+				
+			Power_processData(data);
+				
+			if((current.sampleCount > sampleCountMax) || (periodCount > periodCountMax))
+			{
+				acSamplingStopTime = System_getTimeMicro();
+				lastFrequency = periodCount / ((float) (acSamplingStartTime - acSamplingStopTime) / 1000000);
+				lastPeriodCount = periodCount;
+				lastVoltage = voltage;
+				lastCurrent = current;
+				lastPower = power;
+				Signal_mainDataReady = true;
+				periodCount = 0;
+				Signal_clear(&voltage);
+				Signal_clear(&current);
+				Power_clear();
+				ADC_channel = 2;
+				ADC_state = 0;
+				ADMUX &= 0b11111000;
+				ADMUX |= ADC_channel;
 			}
 		}
 	}
