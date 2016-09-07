@@ -36,15 +36,16 @@ struct PowerData
 	int8_t min;
 };
 
-volatile uint8_t ADC_state;
-uint8_t periodCountMax;
-volatile bool Signal_mainDataReady;
+const uint8_t periodCountMax;
 const float ADC_sensitivity;
-uint16_t lastPeriodTimeSum;
-int16_t lastVoltageCurrentTimeDifferenceSum;
-struct PowerData lastPower;
-struct SignalData lastVoltage;
-struct SignalData lastCurrent;
+
+volatile uint8_t ADC_state;
+volatile bool Signal_mainDataReady;
+volatile uint16_t lastPeriodTimeSum;
+volatile int16_t lastVCTDSum;
+volatile struct PowerData lastPower;
+volatile struct SignalData lastVoltage;
+volatile struct SignalData lastCurrent;
 
 void ADC_init();
 

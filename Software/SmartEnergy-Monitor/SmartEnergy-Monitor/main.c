@@ -49,63 +49,83 @@ void uArrayClear(uint16_t *array)
 	}
 }
 
-int main(void)
+static void runningAverageClear()
 {
-	System_init();
-
+	voltageSquaredSum = 0;
+	currentMaxSum = 0;
+	powerSum = 0;
+	periodDifferenceSum = 0;
+	periodSum = 0;
 	arrayClear(voltageSquaredSumArray);
 	arrayClear(currentMaxSumArray);
 	arrayClear(powerSumArray);
 	uArrayClear(periodDifferenceSumArray);
 	uArrayClear(periodSumArray);
+}
+
+static void runningAverageFill()
+{
+	Signal_mainDataReady = 0;
+	struct SignalData lastVoltageCopy = lastVoltage;
+	struct SignalData lastCurrentCopy = lastCurrent;
+	struct PowerData lastPowerCopy = lastPower;
+	int16_t lastVCTDSumCopy = lastVCTDSum;
+
+	voltageSquaredSum -= voltageSquaredSumArray[arrayCount];
+	voltageSquaredSum += lastVoltageCopy.squared / lastVoltageCopy.sampleCount;
+	voltageSquaredSumArray[arrayCount] = lastVoltageCopy.squared;
+
+	currentMaxSum -= currentMaxSumArray[arrayCount];
+	currentMaxSum += lastCurrentCopy.max;
+	currentMaxSumArray[arrayCount] = lastCurrentCopy.max;
+
+	powerSum -= powerSumArray[arrayCount];
+	powerSum += lastPowerCopy.sum;
+	powerSumArray[arrayCount] = lastPowerCopy.sum;
+
+	periodDifferenceSum -= periodDifferenceSumArray[arrayCount];
+	periodDifferenceSum += lastVCTDSumCopy;
+	periodDifferenceSumArray[arrayCount] = lastVCTDSumCopy;
+
+	periodSum -= periodSumArray[arrayCount];
+	periodSum += lastPeriodTimeSum;
+	periodSumArray[arrayCount] = lastPeriodTimeSum;
+
+	sampleCountSum -= sampleCountSumArray[arrayCount];
+	sampleCountSum += lastCurrentCopy.sampleCount;
+	sampleCountSumArray[arrayCount] = lastCurrentCopy.sampleCount;
+
+	arrayCount++;
+
+	if(arrayCount >= arrayCountMax)
+	{
+		arrayCount = 0;
+	}
+}
+
+void runningAverageSetDisplay()
+{
+	sampleCountAverage = (float) sampleCountSum / arrayCountMax;
+	Display_values.vRMS = ADC_convertToVoltage(sqrt((float) voltageSquaredSum / (arrayCountMax * sampleCountAverage))) * vScale; 
+	Display_values.iMAX = ADC_convertToVoltage((float) currentMaxSum / (arrayCountMax * sampleCountAverage)) * iScale; 
+	Display_values.pAVG = ADC_convertToVoltage((float) powerSum / (arrayCountMax * sampleCountAverage)) * vScale * iScale; 
+	Display_values.frequency = (float) (periodCountMax * arrayCountMax) / periodSum;
+	Display_values.phaseDifference = ((float) periodSum / (periodCountMax * arrayCountMax)) * 360 / ((float) periodDifferenceSum / (periodCountMax * arrayCountMax));
+}
+
+int main(void)
+{
+	System_init();
+
+	runningAverageClear();
 
 	// The Loop
 	while(1)
 	{
 		if(Signal_mainDataReady)
 		{
-			voltageSquaredSum -= voltageSquaredSumArray[arrayCount];
-			voltageSquaredSum += lastVoltage.squared / lastVoltage.sampleCount;
-			voltageSquaredSumArray[arrayCount] = lastVoltage.squared;
-
-			currentMaxSum -= currentMaxSumArray[arrayCount];
-			currentMaxSum += lastCurrent.max;
-			currentMaxSumArray[arrayCount] = lastCurrent.max;
-
-			powerSum -= powerSumArray[arrayCount];
-			powerSum += lastPower.sum;
-			powerSumArray[arrayCount] = lastPower.sum;
-
-			periodDifferenceSum -= periodDifferenceSumArray[arrayCount];
-			periodDifferenceSum += lastVoltageCurrentTimeDifferenceSum;
-			periodDifferenceSumArray[arrayCount] = lastVoltageCurrentTimeDifferenceSum;
-
-			periodSum -= periodSumArray[arrayCount];
-			periodSum += lastPeriodTimeSum;
-			periodSumArray[arrayCount] = lastPeriodTimeSum;
-
-			sampleCountSum -= sampleCountSumArray[arrayCount];
-			sampleCountSum += lastCurrent.sampleCount;
-			sampleCountSumArray[arrayCount] = lastCurrent.sampleCount;
-
-			arrayCount++;
-
-			if(arrayCount >= arrayCountMax)
-			{
-				arrayCount = 0;
-			}
-
-			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-			{
-				sampleCountAverage = (float) sampleCountSum / arrayCountMax;
-				Display_values.vRMS = ADC_convertToVoltage(sqrt((float) voltageSquaredSum / (arrayCountMax * sampleCountAverage))) * vScale; 
-				Display_values.iMAX = ADC_convertToVoltage((float) currentMaxSum / (arrayCountMax * sampleCountAverage)) * iScale; 
-				Display_values.pAVG = ADC_convertToVoltage((float) powerSum / (arrayCountMax * sampleCountAverage)) * vScale * iScale; 
-				Display_values.frequency = (float) (periodCountMax * arrayCountMax) / periodSum;
-				Display_values.phaseDifference = ((float) periodSum / (periodCountMax * arrayCountMax)) * 360 / ((float) periodDifferenceSum / (periodCountMax * arrayCountMax));
-			}
-			Signal_mainDataReady = 0;
-
+			runningAverageFill();
+			runningAverageSetDisplay();
 		}
 
 	}

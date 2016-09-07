@@ -45,9 +45,6 @@ void UART_transmit(uint8_t data)
 
 void UART_transmitArray(uint8_t *data)
 {
-	// Transmit in reverse over the array as reciever recieves rightmost digit
-	// first
-
 	Buffer_fill(data);
 }
 
