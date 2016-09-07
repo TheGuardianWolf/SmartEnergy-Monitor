@@ -38,6 +38,6 @@ void UART_transmit(uint8_t data);
  * @param data       The array containing 8-bit data values
  * @param array_size The size of the array
  */
-void UART_transmitArray(uint8_t *data, uint8_t array_size);
+void UART_transmitArray(uint8_t *data);
 
 #endif /* UART_H_ */
