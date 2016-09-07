@@ -14,13 +14,13 @@
 struct DisplayValues
 {
 	float vRMS;
-	float iRMS;
+	float iMAX;
 	float pAVG;
 	float frequency;
 	float phaseDifference;
 };
 
-uint8_t Display_state;
+volatile uint8_t Display_state;
 struct DisplayValues Display_values;
 
 void Display_init();

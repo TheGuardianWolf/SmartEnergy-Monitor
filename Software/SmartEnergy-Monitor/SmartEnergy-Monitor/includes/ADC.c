@@ -16,8 +16,8 @@
 // ADC, SIGNAL, POWER
 
 volatile uint8_t ADC_state = 0;
-bool Signal_mainDataReady = false;
-uint8_t periodCountMax = 1;
+volatile bool Signal_mainDataReady = false;
+uint8_t periodCountMax = 5;
 const float ADC_sensitivity = 4.882813e-3;
 uint16_t lastPeriodTimeSum = 0;
 int16_t lastVoltageCurrentTimeDifferenceSum = 0;
@@ -61,7 +61,7 @@ void ADC_processData(struct ADCData *storage, int16_t data)
 	storage->value = data;
 }
 
-float ADC_convertToValue(int16_t adcValue)
+float ADC_convertToVoltage(int16_t adcValue)
 {
 	return adcValue * ADC_sensitivity;
 }
@@ -99,17 +99,16 @@ void Power_clear()
 
 ISR(ADC_vect)
 {
-	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-	{
 		int16_t rawData = ADCL | (ADCH << 8);
-		
+	
 		// initialization
 		if (ADC_state == 0)
 		{
 			ADC_channel = 0;
 			ADMUX &= 0b11100000;
 
-			nullVal = 338;//rawData;
+			nullVal = 338;
+			//nullVal = rawData;
 			ADC_state = 1;
 		}
 		// DC mode
@@ -206,79 +205,84 @@ ISR(ADC_vect)
 				Power_processData();
 			}
 		}
+}
+
+ISR(INT1_vect) // Voltage zero crossing
+{
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		currentTime = System_getTimeMicro();
+		tempCurrentLastPeriod = voltage.lastPeriod;
+		voltage.lastPeriod = currentTime;
 	}
 }
 
-ISR(INT0_vect) // Voltage zero crossing
+ISR(INT0_vect) // Current zero crossing
 {
-	currentTime = System_getTimeMicro();
-	tempCurrentLastPeriod = voltage.lastPeriod;
-	voltage.lastPeriod = currentTime;
-}
-
-ISR(INT1_vect) // Current zero crossing
-{
-	currentTime = System_getTimeMicro();
-	tempCurrentLastPeriod = current.lastPeriod;
-	current.lastPeriod = currentTime;
-	
-	
-	if (ADC_state == 1)
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		ADC_state = 2;
-
-		Signal_clear(&voltage);
-		Signal_clear(&current);
-		Power_clear();
-
-		voltage.sampleCount++;
-		voltage.sum += voltageData.value;
-		voltage.squared += (uint32_t) ((int32_t) voltageData.value * (int32_t) voltageData.value);
-		if(voltageData.value > voltage.max)
-		{
-			voltage.max = voltageData.value;
-		}
-		if(voltageData.value < voltage.min)
-		{
-			voltage.min = voltageData.value;
-		}
-
-		current.sampleCount++;
-		current.sum += voltageData.value;
-		current.squared += (uint32_t) ((int32_t) currentData.value * (int32_t) currentData.value);
-		if(currentData.value > current.max)
-		{
-			current.max = currentData.value;
-		}
-		if(currentData.value < current.min)
-		{
-			current.min = currentData.value;
-		}
-
-		Power_processData();
-	}
-	else if (ADC_state == 2)
-	{
-		periodCount++;
-		periodTimeSum += currentTime - tempCurrentLastPeriod;
-		voltageCurrentTimeDifferenceSum += current.lastPeriod - voltage.lastPeriod;
+		currentTime = System_getTimeMicro();
+		tempCurrentLastPeriod = current.lastPeriod;
+		current.lastPeriod = currentTime;
 		
-		if (periodCount >= periodCountMax)
+		
+		if (ADC_state == 1)
 		{
-			lastPeriodTimeSum = periodTimeSum;
-			lastVoltageCurrentTimeDifferenceSum = voltageCurrentTimeDifferenceSum;
-			lastVoltage = voltage;
-			lastCurrent = current;
-			lastPower = power;
-			Signal_mainDataReady = true;
-			periodCount = 0;
+			ADC_state = 2;
+
 			Signal_clear(&voltage);
 			Signal_clear(&current);
 			Power_clear();
-			ADC_channel = 2;
-			ADC_state = 0;
-			ADMUX &= 0b11111000;
-			ADMUX |= ADC_channel;
+
+			voltage.sampleCount++;
+			voltage.sum += voltageData.value;
+			voltage.squared += (uint32_t) ((int32_t) voltageData.value * (int32_t) voltageData.value);
+			if(voltageData.value > voltage.max)
+			{
+				voltage.max = voltageData.value;
+			}
+			if(voltageData.value < voltage.min)
+			{
+				voltage.min = voltageData.value;
+			}
+
+			current.sampleCount++;
+			current.sum += voltageData.value;
+			current.squared += (uint32_t) ((int32_t) currentData.value * (int32_t) currentData.value);
+			if(currentData.value > current.max)
+			{
+				current.max = currentData.value;
+			}
+			if(currentData.value < current.min)
+			{
+				current.min = currentData.value;
+			}
+
+			Power_processData();
+		}
+		else if (ADC_state == 2)
+		{
+			periodCount++;
+			periodTimeSum += currentTime - tempCurrentLastPeriod;
+			voltageCurrentTimeDifferenceSum += current.lastPeriod - voltage.lastPeriod;
+			
+			if (periodCount >= periodCountMax)
+			{
+				lastPeriodTimeSum = periodTimeSum;
+				lastVoltageCurrentTimeDifferenceSum = voltageCurrentTimeDifferenceSum;
+				lastVoltage = voltage;
+				lastCurrent = current;
+				lastPower = power;
+				Signal_mainDataReady = true;
+				periodCount = 0;
+				Signal_clear(&voltage);
+				Signal_clear(&current);
+				Power_clear();
+				ADC_channel = 2;
+				ADC_state = 0;
+				ADMUX &= 0b11111000;
+				ADMUX |= ADC_channel;
+			}
 		}
 	}
 }

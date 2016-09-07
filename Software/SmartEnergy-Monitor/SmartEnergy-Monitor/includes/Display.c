@@ -12,13 +12,14 @@
 #include <avr/io.h>
 #include <util/atomic.h>
 
-uint8_t Display_state = 0;
+volatile uint8_t Display_state = 0;
+static volatile uint8_t delayCount = 0;
 struct DisplayValues Display_values = {0, 0, 0, 0, 0};
 
 void Display_init()
 {
 	TCCR0A = 0;
-	TCCR0B = (1 << CS02);
+	TCCR0B = (1 << CS01) | (1 << CS00);
 	TIMSK0 = (1 << TOIE0);
 	TCNT0  = 0;
 	UART_transmit(Display_encodeSync());
@@ -124,7 +125,7 @@ void Display_encode(uint8_t *characters, uint8_t decimalIndex)
 
 void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 {
-	int16_t dec = (value + 0.005) * 1000;
+	int16_t dec = (value) * 1000;
 	if (dec > 9999) {
 		result[0] =  dec / 10000 % 10 + '0';
 		*decimalIndex = 1;
@@ -141,13 +142,18 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 
 ISR( TIMER0_OVF_vect )
 {
-	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-	{
-		uint8_t tempArray[4];
-		uint8_t tempDecimalIndex = 0;
-		Display_floatToChar(Display_values.vRMS, tempArray, &tempDecimalIndex);
-		Display_encode(tempArray, tempDecimalIndex);
-		UART_transmit(Display_encodeSync());
-		UART_transmitArray(tempArray, 4);
-	}
+		if (delayCount < 5) 
+		{
+			delayCount++;
+		}
+		else 
+		{
+			delayCount = 0;
+			uint8_t tempArray[4];
+			uint8_t tempDecimalIndex = 0;
+			Display_floatToChar(12.11, tempArray, &tempDecimalIndex);
+			Display_encode(tempArray, tempDecimalIndex);
+			UART_transmit(Display_encodeSync());
+			UART_transmitArray(tempArray, 4);
+		}
 }

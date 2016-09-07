@@ -11,63 +11,61 @@
 #include <avr/io.h>
 #include <util/atomic.h>
 
+#include <includes/Interface.h>
+
 // BUFFER and UART
 
-static uint8_t Buffer_buffer[16];
+static uint8_t Buffer_buffer[64];
 static const uint8_t Buffer_size = 16;
 static uint8_t Buffer_frontIndex = 0;
 static uint8_t Buffer_itemCount = 0;
 
 static bool Buffer_isFull()
 {
-	if ((Buffer_size  - Buffer_itemCount) == 0)
-	{
-		return true;
-	}
-	return false;
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
+    {
+	    return ( Buffer_size - Buffer_itemCount ) <= 0;
+    }
 }
 
 static bool Buffer_isEmpty()
 {
-	if ((Buffer_size  - Buffer_itemCount) == Buffer_size)
-	{
-		return true;
-	}
-	return false;
+	return ( Buffer_itemCount == 0 );
 }
 
 static bool Buffer_push(uint8_t data)
 {
-	if (!Buffer_isFull())
-	{
-		Buffer_buffer[(Buffer_frontIndex + Buffer_itemCount) % Buffer_size] = data;
-		Buffer_itemCount++;
-		return true;
-	}
-	return false;
+   ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
+   {
+	   if ( Buffer_itemCount < Buffer_size )
+	   {
+		   Buffer_buffer[ ( Buffer_frontIndex + Buffer_itemCount ) % Buffer_size ] = data;
+		   ++Buffer_itemCount;
+		   return 0;
+	   }
+   }
+   // If buffer is full, ignore the push()
+   return 1;
 }
 
 static uint8_t Buffer_pull()
 {
-	if (!Buffer_isEmpty())
-	{
-		uint8_t data = Buffer_buffer[Buffer_frontIndex];
-		Buffer_itemCount--;
-		Buffer_frontIndex++;
-		return data;
-	}
-	return -1;
+   int data = -1;
+   ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
+   {
+	   if ( Buffer_itemCount )
+	   {
+		   data = Buffer_buffer[ Buffer_frontIndex ];
+		   Buffer_frontIndex++;
+		   if ( Buffer_frontIndex >= Buffer_size )
+		   {
+			   Buffer_frontIndex -= Buffer_size;
+		   }
+		   --Buffer_itemCount;
+	   }
+   }
+   return data;
 }
-
-//static uint8_t Buffer_peek()
-//{
-	//return Buffer_buffer[Buffer_frontIndex];
-//}
-//
-//static void Buffer_clear()
-//{
-	//Buffer_itemCount = 0;
-//}
 
 void UART_init()
 {
@@ -75,19 +73,17 @@ void UART_init()
 			 (1 << UCSZ01); // 8-bit data, 2 stop bits, odd parity
 	UBRR0H = (BAUDRATE >> 8); // Set the prescaler on high
 	UBRR0L = BAUDRATE; // Set the prescaler on low
-	UCSR0B = (1 << TXEN0); // Enable transmitter and tx buffer interrupt
+	UCSR0B = (1 << TXEN0) | (1 << UCSR0B); // Enable transmitter and tx buffer interrupt
 }
 
 void UART_transmit(uint8_t data)
 {
-	while(Buffer_isFull())
-	{
-		if(!((1 << UDRIE0) & 1))
-		{
-			UCSR0B |= (1 << UDRIE0);
-			UCSR0A |= (1 << TXC0);
-		}
+	while(Buffer_isFull()) {
+		Interface_ledOn();
+		//while ( !( UCSR0A & (1<<UDRE0) ) );
+		//UDR0 = Buffer_pull();
 	}
+	Interface_ledOff();
 	Buffer_push(data);
 	UCSR0B |= (1 << UDRIE0);
 	UCSR0A |= (1 << TXC0);
@@ -105,15 +101,12 @@ void UART_transmitArray(uint8_t *data, uint8_t array_size)
 
 ISR(USART_UDRE_vect)
 {
-	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	if (!Buffer_isEmpty())
 	{
-		if (!Buffer_isEmpty())
-		{
-			UDR0 = Buffer_pull();
-		}
-		else
-		{
-			UCSR0B &= ~(1 << UDRIE0);
-		}
+		UDR0 = Buffer_pull();
+	}
+	else
+	{
+		UCSR0B &= ~(1 << UDRIE0);
 	}
 }

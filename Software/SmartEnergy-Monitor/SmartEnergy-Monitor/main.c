@@ -17,10 +17,10 @@
 
 static uint8_t arrayCount = 0;
 static const uint8_t arrayCountMax = 50;
-static int16_t voltageSquared = 0;
-static int16_t voltageSquaredArray[50];
-static int16_t currentSquared = 0;
-static int16_t currentSquaredArray[50];
+static int16_t voltageSquaredSum = 0;
+static int16_t voltageSquaredSumArray[50];
+static int16_t currentMaxSum = 0;
+static int16_t currentMaxSumArray[50];
 static int16_t powerSum = 0;
 static int16_t powerSumArray[50];
 static uint16_t periodDifferenceSum = 0;
@@ -30,8 +30,8 @@ static uint16_t periodSumArray[50];
 static uint16_t sampleCountSum = 0;
 static uint16_t sampleCountSumArray[50];
 static float sampleCountAverage = 0;
-static float vScale = 1;
-static float iScale = 1;
+static const float vScale = 12.0;
+static const float iScale = 0.30356;
 
 void arrayClear(int16_t *array)
 {
@@ -53,24 +53,24 @@ int main(void)
 {
 	System_init();
 
-	arrayClear(voltageSquaredArray);
-	arrayClear(currentSquaredArray);
+	arrayClear(voltageSquaredSumArray);
+	arrayClear(currentMaxSumArray);
 	arrayClear(powerSumArray);
 	uArrayClear(periodDifferenceSumArray);
 	uArrayClear(periodSumArray);
 
 	// The Loop
-	for(;;)
+	while(1)
 	{
 		if(Signal_mainDataReady)
 		{
-			voltageSquared -= voltageSquaredArray[arrayCount];
-			voltageSquared += lastVoltage.squared / lastVoltage.sampleCount;
-			voltageSquaredArray[arrayCount] = lastVoltage.squared;
+			voltageSquaredSum -= voltageSquaredSumArray[arrayCount];
+			voltageSquaredSum += lastVoltage.squared / lastVoltage.sampleCount;
+			voltageSquaredSumArray[arrayCount] = lastVoltage.squared;
 
-			currentSquared -= currentSquaredArray[arrayCount];
-			currentSquared += lastCurrent.squared;
-			currentSquaredArray[arrayCount] = lastCurrent.squared;
+			currentMaxSum -= currentMaxSumArray[arrayCount];
+			currentMaxSum += lastCurrent.max;
+			currentMaxSumArray[arrayCount] = lastCurrent.max;
 
 			powerSum -= powerSumArray[arrayCount];
 			powerSum += lastPower.sum;
@@ -98,12 +98,13 @@ int main(void)
 			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 			{
 				sampleCountAverage = (float) sampleCountSum / arrayCountMax;
-				Display_values.vRMS = sqrt((float) voltageSquared / (arrayCountMax * sampleCountAverage)) * vScale; 
-				Display_values.iRMS = sqrt((float) currentSquared / (arrayCountMax * sampleCountAverage)) * iScale; 
-				Display_values.pAVG = (float) powerSum / (arrayCountMax * sampleCountAverage) * vScale * iScale; 
+				Display_values.vRMS = ADC_convertToVoltage(sqrt((float) voltageSquaredSum / (arrayCountMax * sampleCountAverage))) * vScale; 
+				Display_values.iMAX = ADC_convertToVoltage((float) currentMaxSum / (arrayCountMax * sampleCountAverage)) * iScale; 
+				Display_values.pAVG = ADC_convertToVoltage((float) powerSum / (arrayCountMax * sampleCountAverage)) * vScale * iScale; 
 				Display_values.frequency = (float) (periodCountMax * arrayCountMax) / periodSum;
 				Display_values.phaseDifference = ((float) periodSum / (periodCountMax * arrayCountMax)) * 360 / ((float) periodDifferenceSum / (periodCountMax * arrayCountMax));
 			}
+			Signal_mainDataReady = 0;
 
 		}
 

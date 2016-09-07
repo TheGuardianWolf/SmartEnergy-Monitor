@@ -38,7 +38,7 @@ struct PowerData
 
 volatile uint8_t ADC_state;
 uint8_t periodCountMax;
-bool Signal_mainDataReady;
+volatile bool Signal_mainDataReady;
 const float ADC_sensitivity;
 uint16_t lastPeriodTimeSum;
 int16_t lastVoltageCurrentTimeDifferenceSum;
@@ -52,7 +52,7 @@ void ADC_initComparators();
 
 void ADC_processData(struct ADCData *storage, int16_t data);
 
-float ADC_convertToValue(int16_t adcValue);
+float ADC_convertToVoltage(int16_t adcValue);
 
 void Signal_clear(struct SignalData *storage);
 

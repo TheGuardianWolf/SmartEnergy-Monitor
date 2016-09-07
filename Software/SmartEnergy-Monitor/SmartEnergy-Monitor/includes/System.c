@@ -25,8 +25,8 @@ void System_init()
 	ATOMIC_BLOCK(ATOMIC_FORCEON)
 	{
 		System_initClock();
-		ADC_init();
-		ADC_initComparators();
+		//ADC_init();
+		//ADC_initComparators();
 		Interface_init();
 		UART_init();
 		Display_init();
