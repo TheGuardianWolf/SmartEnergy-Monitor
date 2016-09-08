@@ -50,11 +50,13 @@ void UART_transmitArray(uint8_t *data)
 
 ISR(USART_UDRE_vect)
 {
-	
-	UDR0 = Buffer_buffer[transmitIndex];
-	transmitIndex++;
-	if (transmitIndex > 4)
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		transmitIndex = 0;
+		UDR0 = Buffer_buffer[transmitIndex];
+		transmitIndex++;
+		if (transmitIndex > 4)
+		{
+			transmitIndex = 0;
+		}
 	}
 }

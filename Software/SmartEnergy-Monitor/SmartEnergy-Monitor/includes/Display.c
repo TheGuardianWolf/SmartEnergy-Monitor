@@ -43,7 +43,7 @@ uint8_t Display_encodeChar(uint8_t character)
 		case '6':
 		return 0b01011111;
 		case '7':
-		return 0b01100000;
+		return 0b01110000;
 		case '8':
 		return 0b01111111;
 		case '9':
@@ -145,7 +145,7 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 
 ISR( TIMER0_OVF_vect )
 {
-		if (delayCount < 100) 
+		if (delayCount < 50) 
 		{
 			delayCount++;
 		}
@@ -154,7 +154,7 @@ ISR( TIMER0_OVF_vect )
 			delayCount = 0;
 			uint8_t tempArray[4];
 			uint8_t tempDecimalIndex = 0;
-			Display_floatToChar(12.34, tempArray, &tempDecimalIndex);
+			Display_floatToChar(Display_values.vRMS, tempArray, &tempDecimalIndex);
 			Display_encode(tempArray, tempDecimalIndex);
 			UART_transmitArray(tempArray);
 		}

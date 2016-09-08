@@ -21,7 +21,7 @@ struct ADCData
 struct SignalData
 {
 	uint16_t sampleCount;
-	int16_t sum;
+	int32_t sum;
 	int16_t max;
 	int16_t min;
 	uint32_t squared;
@@ -31,9 +31,10 @@ struct SignalData
 
 struct PowerData
 {
-	int16_t sum;
-	int8_t max;
-	int8_t min;
+	uint16_t sampleCount;
+	int32_t sum;
+	int32_t max;
+	int32_t min;
 };
 
 const uint8_t periodCountMax;
@@ -50,6 +51,8 @@ volatile struct SignalData lastCurrent;
 void ADC_init();
 
 void ADC_initComparators();
+
+void ADC_setChannel(uint8_t ch);
 
 void ADC_processData(struct ADCData *storage, int16_t data);
 
