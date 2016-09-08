@@ -99,11 +99,11 @@ static void runningAverageFill()
 void runningAverageSetDisplay()
 {
 	sampleCountAverage = (float) sampleCountSum / ARRAY_COUNT_MAX;
-	Display_values.vRMS = ADC_convertToVoltage(sqrt((float) voltageSquaredSum / (ARRAY_COUNT_MAX * sampleCountAverage))) * vScale; 
-	Display_values.iMAX = ADC_convertToVoltage((float) currentMaxSum / (ARRAY_COUNT_MAX * sampleCountAverage)) * iScale; 
-	Display_values.pAVG = ADC_convertToVoltage((float) powerSum / (ARRAY_COUNT_MAX * sampleCountAverage)) * vScale * iScale; 
-	Display_values.frequency = (float) (periodCountMax * ARRAY_COUNT_MAX) / periodSum;
-	Display_values.phaseDifference = ((float) periodSum / (periodCountMax * ARRAY_COUNT_MAX)) * 360 / ((float) periodDifferenceSum / (periodCountMax * ARRAY_COUNT_MAX));
+	Display_values[vRMS] = ADC_convertToVoltage(sqrt((float) voltageSquaredSum / (ARRAY_COUNT_MAX * sampleCountAverage))) * vScale; 
+	Display_values[iMAX] = ADC_convertToVoltage((float) currentMaxSum / (ARRAY_COUNT_MAX * sampleCountAverage)) * iScale; 
+	Display_values[pAVG] = ADC_convertToVoltage((float) powerSum / (ARRAY_COUNT_MAX * sampleCountAverage)) * vScale * iScale; 
+	Display_values[frequency] = (float) (periodCountMax * ARRAY_COUNT_MAX) / periodSum;
+	Display_values[phaseDifference] = ((float) periodSum / (periodCountMax * ARRAY_COUNT_MAX)) * 360 / ((float) periodDifferenceSum / (periodCountMax * ARRAY_COUNT_MAX));
 }
 
 int main(void)

@@ -13,8 +13,17 @@
 #include <util/atomic.h>
 
 volatile uint8_t Display_state = 0;
-static volatile uint16_t delayCount = 0;
-struct DisplayValues Display_values = {0, 0, 0, 0, 0};
+float Display_values[5] = {0, 0, 0, 0, 0};
+
+static uint8_t stateDelay = 0;
+static uint8_t displayUpdateDelay = 0;
+static uint8_t displayIndex = 0;
+static uint8_t Display_names[3][4] = 
+{
+	{'U', 'o', 'l', 'A'},
+	{'C', 'U', 'r', 'r'},
+	{'P', 'o', 'E', 'r'}
+};
 
 void Display_init()
 {
@@ -70,6 +79,8 @@ uint8_t Display_encodeChar(uint8_t character)
 		return 0b00001110;
 		case 'n':
 		return 0b00010101;
+		case 'O':
+		return 0b01111110;
 		case 'o':
 		return 0b00010101;
 		case 'P':
@@ -145,17 +156,45 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 
 ISR( TIMER0_OVF_vect )
 {
-		if (delayCount < 50) 
+	if (displayUpdateDelay >= 100)
+	{
+		displayUpdateDelay = 0;
+		uint8_t tempArray[4];
+		uint8_t tempDecimalIndex = 0;
+		if (Display_state == 0)
 		{
-			delayCount++;
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				tempArray[i] = Display_names[displayIndex][i];
+			}
+			Display_encode(tempArray, 4);
+			if (stateDelay >= 1) 
+			{
+				stateDelay = 0;
+				Display_state++;
+				Display_state &= 1;	
+			}
 		}
-		else 
+		else if (Display_state == 1)
 		{
-			delayCount = 0;
-			uint8_t tempArray[4];
-			uint8_t tempDecimalIndex = 0;
-			Display_floatToChar(Display_values.vRMS, tempArray, &tempDecimalIndex);
+			Display_floatToChar(Display_values[displayIndex], tempArray, &tempDecimalIndex);
 			Display_encode(tempArray, tempDecimalIndex);
-			UART_transmitArray(tempArray);
+			if (stateDelay >= 4) 
+			{
+				stateDelay = 0;
+				Display_state++;
+				Display_state &= 1;	
+
+				displayIndex++;
+				if (displayIndex > 2) 
+				{
+					displayIndex = 0;
+				}
+			}
 		}
+		stateDelay++;
+		UART_transmitArray(tempArray);
+	}
+	displayUpdateDelay++;
+	
 }

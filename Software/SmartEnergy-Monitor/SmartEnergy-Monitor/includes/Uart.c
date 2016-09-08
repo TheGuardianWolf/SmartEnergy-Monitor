@@ -17,7 +17,7 @@
 // BUFFER and UART
 
 static uint8_t transmitIndex = 0;
-static uint8_t Buffer_buffer[5] = {0b00000000,0,0,0,0};
+static uint8_t Buffer_buffer[5] = {0b00000000, 0b00010101, 0b01111110, 0, 0};
 
 void Buffer_fill(uint8_t *data)
 {

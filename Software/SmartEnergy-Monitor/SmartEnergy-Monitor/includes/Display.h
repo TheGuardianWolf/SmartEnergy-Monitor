@@ -11,17 +11,17 @@
 
 #include <stdint.h>
 
-struct DisplayValues
+enum DisplayParam
 {
-	float vRMS;
-	float iMAX;
-	float pAVG;
-	float frequency;
-	float phaseDifference;
+	vRMS,
+	iMAX,
+	pAVG,
+	frequency,
+	phaseDifference
 };
 
 volatile uint8_t Display_state;
-struct DisplayValues Display_values;
+float Display_values[5];
 
 void Display_init();
 
