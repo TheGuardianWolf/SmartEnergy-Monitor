@@ -108,9 +108,8 @@ void runningAverageSetDisplay()
 
 int main(void)
 {
-	System_init();
-
 	runningAverageClear();
+	System_init();
 
 	// The Loop
 	while(1)

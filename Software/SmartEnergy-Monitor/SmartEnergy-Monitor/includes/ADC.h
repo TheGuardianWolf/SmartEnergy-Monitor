@@ -58,9 +58,14 @@ void ADC_processData(struct ADCData *storage, int16_t data);
 
 float ADC_convertToVoltage(int16_t adcValue);
 
+void ADC_passToMain();
+
 void Signal_clear(struct SignalData *storage);
+
+void Signal_processData(struct SignalData *storage, int16_t data);
 
 void Power_processData();
 
+void Power_clear();
 
 #endif /* ADC_H_ */

@@ -82,7 +82,7 @@ uint8_t Display_encodeChar(uint8_t character)
 		case 'O':
 		return 0b01111110;
 		case 'o':
-		return 0b00010101;
+		return 0b00011101;
 		case 'P':
 		return 0b01100111;
 		case 'r':
@@ -135,28 +135,71 @@ void Display_encode(uint8_t *characters, uint8_t decimalIndex)
 
 void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 {
-	int16_t dec = (value) * 1000;
-	if (dec > 9999) {
-		result[0] =  dec / 10000 % 10 + '0';
-		*decimalIndex = 1;
-		result[1] = dec / 1000 % 10 + '0'; 
-		result[2] = dec / 100 % 10 + '0';
-		result[3] = dec / 10 % 10 + '0';
-	}
-	else
+	int16_t dec = value;
+	if (dec > 9999 || dec < -9999)
 	{
-		result[0] = dec / 1000 % 10 + '0';
-		*decimalIndex = 0;
-		result[1] = dec / 100 % 10 + '0'; 
-		result[2] = dec / 10 % 10 + '0';
-		result[3] = dec % 10 + '0';
+		result[0] = 'O';
+		result[1] = 'F';
+		result[2] = 'L';
+		result[3] = 'O';
+		*decimalIndex = 4;
+		return;
 	}
 
+	if (value < 0.0005 && value > -0.0005)
+	{
+		result[0] = '0';
+		result[1] = '0';
+		result[2] = '0';
+		result[3] = '0';
+		*decimalIndex = 0;
+		return;
+	}
+
+	uint8_t charsUsed = 0;
+
+	if (value < 0)
+	{
+		result[0] = '-';
+		dec = abs(dec);
+		charsUsed++;
+	}
+	
+	for (uint16_t i = 1000; i >= 1; i /= 10)
+	{
+		if (dec > i)
+		{
+			result[charsUsed] = dec / i % 10 + '0';
+			charsUsed++;
+		}
+	}
+	
+	if (charsUsed == 0)
+	{
+		result[0] = '0';
+		*decimalIndex = 0;
+		charsUsed++;
+	}
+
+	*decimalIndex = charsUsed - 1;
+
+	while (charsUsed < 3)
+	{
+		value = value * 10;
+		result[charsUsed] = ((uint32_t) value) % 10 + '0';	
+		charsUsed++;
+	}
+
+	if (charsUsed == 3)
+	{
+		result[charsUsed] = ((uint32_t) (value + 0.5)) % 10 + '0';
+		charsUsed++;
+	}
 }
 
 ISR( TIMER0_OVF_vect )
 {
-	if (displayUpdateDelay >= 100)
+	if (displayUpdateDelay >= 25)
 	{
 		displayUpdateDelay = 0;
 		uint8_t tempArray[4];
@@ -168,7 +211,7 @@ ISR( TIMER0_OVF_vect )
 				tempArray[i] = Display_names[displayIndex][i];
 			}
 			Display_encode(tempArray, 4);
-			if (stateDelay >= 1) 
+			if (stateDelay >= 4) 
 			{
 				stateDelay = 0;
 				Display_state++;
@@ -179,7 +222,7 @@ ISR( TIMER0_OVF_vect )
 		{
 			Display_floatToChar(Display_values[displayIndex], tempArray, &tempDecimalIndex);
 			Display_encode(tempArray, tempDecimalIndex);
-			if (stateDelay >= 4) 
+			if (stateDelay >= 16) 
 			{
 				stateDelay = 0;
 				Display_state++;
