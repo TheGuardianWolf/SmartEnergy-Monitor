@@ -41,6 +41,11 @@ void System_initClock()
 	TCNT1  = 0;
 }
 
+void System_resetClock()
+{
+	TCNT1 = 0;
+}
+
 uint32_t System_getTimeMicro()
 {
 	uint32_t time;

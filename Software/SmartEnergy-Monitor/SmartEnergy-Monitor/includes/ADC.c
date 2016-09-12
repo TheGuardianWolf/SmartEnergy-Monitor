@@ -169,16 +169,7 @@ ISR(ADC_vect)
 		// DC mode
 		if (ADC_state == 2)
 		{
-			if(current.sampleCount >= DCSampleCountMax)
-			{
-				ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-				{
-					ADC_setChannel(2);
-					ADC_state = 0;
-					ADC_passToMain();
-				}
-			}
-			else if (ADC_channel == 0)
+			if (ADC_channel == 0)
 			{
 				ADC_processData(&voltageData, data);
 				Signal_processData(&voltage, data);
@@ -188,21 +179,22 @@ ISR(ADC_vect)
 				ADC_processData(&currentData, data);
 				Signal_processData(&current, data);
 				Power_processData();
+
+				if(current.sampleCount >= DCSampleCountMax)
+				{
+					ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+					{
+						ADC_setChannel(2);
+						ADC_state = 0;
+						ADC_passToMain();
+					}
+				}
 			}
 		}
 		// AC mode
 		else if (ADC_state == 3)
 		{
-			if(current.sampleCount >= DCSampleCountMax)
-			{
-				ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-				{
-					ADC_setChannel(2);
-					ADC_state = 0;
-					ADC_passToMain();
-				}
-			}
-			else if (ADC_channel == 0)
+			if (ADC_channel == 0)
 			{
 				ADC_processData(&voltageData, data);
 				Signal_processData(&voltage, data);
@@ -212,6 +204,16 @@ ISR(ADC_vect)
 				ADC_processData(&currentData, data);
 				Signal_processData(&current, data);
 				Power_processData();
+
+				if(current.sampleCount >= DCSampleCountMax || periodCount >= periodCountMax)
+				{
+					ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+					{
+						ADC_setChannel(2);
+						ADC_state = 0;
+						ADC_passToMain();
+					}
+				}
 			}
 		}
 	}
@@ -231,8 +233,6 @@ ISR(INT0_vect) // Current zero crossing
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		uint32_t currentTime = System_getTimeMicro();
-		uint32_t tempCurrentLastPeriod = current.lastPeriod;
-		current.lastPeriod = currentTime;
 		
 		if (ADC_state == 2)
 		{
@@ -249,14 +249,10 @@ ISR(INT0_vect) // Current zero crossing
 		else if (ADC_state == 3)
 		{
 			periodCount++;
-			periodTimeSum += currentTime - tempCurrentLastPeriod;
-			voltageCurrentTimeDifferenceSum += current.lastPeriod - voltage.lastPeriod;
-			
-			if (periodCount >= periodCountMax)
-			{
-				ADC_setChannel(2);
-				ADC_state = 0;
-			}
+			periodTimeSum += currentTime - current.lastPeriod;
+			voltageCurrentTimeDifferenceSum += currentTime - voltage.lastPeriod;
 		}
+
+		current.lastPeriod = currentTime;
 	}
 }

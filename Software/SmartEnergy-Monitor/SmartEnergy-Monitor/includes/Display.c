@@ -12,17 +12,21 @@
 #include <avr/io.h>
 #include <util/atomic.h>
 
+#define DISPLAY_INDEX_MAX 2
+
 volatile uint8_t Display_state = 0;
 float Display_values[5] = {0, 0, 0, 0, 0};
 
 static uint8_t stateDelay = 0;
 static uint8_t displayUpdateDelay = 0;
 static uint8_t displayIndex = 0;
-static uint8_t Display_names[3][4] = 
+static uint8_t Display_names[5][4] = 
 {
 	{'U', 'o', 'l', 'A'},
-	{'C', 'U', 'r', 'r'},
-	{'P', 'o', 'E', 'r'}
+	{'C', 'u', 'r', 'r'},
+	{'P', 'o', 'E', 'r'},
+	{'F', 'r', 'E', 'E'},
+	{'P', 'H', 'A', 'S'}
 };
 
 void Display_init()
@@ -89,6 +93,8 @@ uint8_t Display_encodeChar(uint8_t character)
 		return 0b00000101;
 		case 'S':
 		return 0b01011011;
+		case 'u':
+		return 0b00011100;
 		case 'U':
 		return 0b00111110;
 		case 'y':
@@ -136,7 +142,7 @@ void Display_encode(uint8_t *characters, uint8_t decimalIndex)
 void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 {
 	int16_t dec = value;
-	if (dec > 9999 || dec < -9999)
+	if (dec > 9999 || dec < -999)
 	{
 		result[0] = 'O';
 		result[1] = 'F';
@@ -229,7 +235,7 @@ ISR( TIMER0_OVF_vect )
 				Display_state &= 1;	
 
 				displayIndex++;
-				if (displayIndex > 2) 
+				if (displayIndex > DISPLAY_INDEX_MAX) 
 				{
 					displayIndex = 0;
 				}
