@@ -221,38 +221,40 @@ ISR(ADC_vect)
 
 ISR(INT1_vect) // Voltage zero crossing
 {
+	uint32_t currentTime;
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		uint32_t currentTime = System_getTimeMicro();
-		voltage.lastPeriod = currentTime;
+		currentTime = System_getTimeMicro();
 	}
+	voltage.lastPeriod = currentTime;
 }
 
 ISR(INT0_vect) // Current zero crossing
 {
+	uint32_t currentTime;
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		uint32_t currentTime = System_getTimeMicro();
-		
-		if (ADC_state == 2)
+		currentTime = System_getTimeMicro();
+	}
+	if (ADC_state == 2)
+	{
+		ADC_state = 3;
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 		{
-			ADC_state = 3;
-
 			Signal_clear(&voltage);
 			Signal_clear(&current);
 			Power_clear();
-
+			
 			Signal_processData(&voltage, voltageData.value);
 			Signal_processData(&current, currentData.value);
 			Power_processData();
 		}
-		else if (ADC_state == 3)
-		{
-			periodCount++;
-			periodTimeSum += currentTime - current.lastPeriod;
-			voltageCurrentTimeDifferenceSum += currentTime - voltage.lastPeriod;
-		}
-
-		current.lastPeriod = currentTime;
 	}
+	else if (ADC_state == 3)
+	{
+		periodCount++;
+		periodTimeSum += currentTime - current.lastPeriod;
+		voltageCurrentTimeDifferenceSum += currentTime - voltage.lastPeriod;
+	}
+	current.lastPeriod = currentTime;
 }

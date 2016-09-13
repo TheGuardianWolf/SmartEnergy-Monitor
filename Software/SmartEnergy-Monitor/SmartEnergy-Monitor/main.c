@@ -15,23 +15,10 @@
 #include <math.h>
 #include <string.h>
 #include <util/atomic.h>
+#include <util/delay.h>
 
-#define ARRAY_COUNT_MAX 20
+#define ARRAY_COUNT_MAX 50
 
-static uint8_t arrayCount = 0;
-static int32_t voltageSquaredSum = 0;
-static int32_t voltageSquaredSumArray[ARRAY_COUNT_MAX];
-static int32_t currentMaxSum = 0;
-static int16_t currentMaxSumArray[ARRAY_COUNT_MAX];
-static int32_t powerSum = 0;
-static int32_t powerSumArray[ARRAY_COUNT_MAX];
-static uint32_t periodDifferenceSum = 0;
-static uint16_t periodDifferenceSumArray[ARRAY_COUNT_MAX];
-static uint32_t periodSum = 0;
-static uint16_t periodSumArray[ARRAY_COUNT_MAX];
-static uint16_t sampleCountSum = 0;
-static uint16_t sampleCountSumArray[ARRAY_COUNT_MAX];
-static float sampleCountAverage = 0;
 static const float vScale = 14.6374753489308;
 static const float iScale = 0.565753422251559;
 
@@ -40,6 +27,21 @@ static struct SignalData lastCurrentCopy;
 static struct PowerData lastPowerCopy;
 static uint16_t lastPeriodTimeSumCopy;
 static int16_t lastVCTDSumCopy;
+
+static uint8_t arrayCount = 0;
+static uint32_t voltageSquaredSum = 0;
+static uint32_t voltageSquaredSumArray[ARRAY_COUNT_MAX];
+static int32_t currentMaxSum = 0;
+static int16_t currentMaxSumArray[ARRAY_COUNT_MAX];
+static int64_t powerSum = 0;
+static int32_t powerSumArray[ARRAY_COUNT_MAX];
+static uint32_t periodDifferenceSum = 0;
+static uint16_t periodDifferenceSumArray[ARRAY_COUNT_MAX];
+static uint32_t periodSum = 0;
+static uint16_t periodSumArray[ARRAY_COUNT_MAX];
+static uint16_t sampleCountSum = 0;
+static uint16_t sampleCountSumArray[ARRAY_COUNT_MAX];
+static float sampleCountAverage = 0;
 
 static void runningAverageClear()
 {

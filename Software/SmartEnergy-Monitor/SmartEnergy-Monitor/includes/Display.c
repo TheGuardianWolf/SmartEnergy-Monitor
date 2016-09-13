@@ -31,6 +31,10 @@ static uint8_t Display_names[5][4] =
 
 void Display_init()
 {
+	uint8_t initData[4] = {0b01111110, 0b00010101, 0, 0};
+	Buffer_setSync(Display_encodeSync());
+	Buffer_fill(initData);
+
 	TCCR0A = 0;
 	TCCR0B = (1 << CS02) | (1 << CS00);
 	TIMSK0 = (1 << TOIE0);
@@ -132,7 +136,7 @@ uint8_t Display_encodeChar(uint8_t character)
 
 uint8_t Display_encodeSync()
 {
-	return 0b00000000;
+	return 0b01001001;
 }
 
 void Display_encode(uint8_t *characters, uint8_t decimalIndex)

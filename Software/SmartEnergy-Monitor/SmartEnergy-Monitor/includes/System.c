@@ -26,7 +26,7 @@ void System_init()
 	{
 		System_initClock();
 		ADC_init();
-		//ADC_initComparators();
+		ADC_initComparators();
 		Interface_init();
 		UART_init();
 		Display_init();

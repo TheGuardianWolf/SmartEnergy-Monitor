@@ -11,13 +11,15 @@
 #include <avr/io.h>
 #include <util/atomic.h>
 
-#include <includes/Display.h>
-#include <includes/Interface.h>
-
 // BUFFER and UART
 
 static uint8_t transmitIndex = 0;
-static uint8_t Buffer_buffer[5] = {0b00000000, 0b00010101, 0b01111110, 0, 0};
+static uint8_t Buffer_buffer[5] = {0, 0, 0, 0, 0}; // Pre-fill values to display "On"
+
+void Buffer_setSync(uint8_t syncPacket)
+{
+	Buffer_buffer[0] = syncPacket;
+}
 
 void Buffer_fill(uint8_t *data)
 {
@@ -28,7 +30,6 @@ void Buffer_fill(uint8_t *data)
 		Buffer_buffer[i] = data[j];
 	}
 }
-
 
 void UART_init()
 {

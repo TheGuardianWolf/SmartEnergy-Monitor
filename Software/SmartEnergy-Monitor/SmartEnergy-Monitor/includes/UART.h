@@ -20,6 +20,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+void Buffer_setSync(uint8_t syncPacket);
+
+void Buffer_fill(uint8_t *data);
+
 /**
  * Initialises the UART registers with the appropriate bits for 8-bit data, 2
  * stop bits and an odd parity bit.
@@ -28,7 +32,7 @@
 void UART_init();
 
 /**
- * Transmits data
+ * [DEPRECIATED] Transmits data
  * @param data 8 bit data to be transmitted
  */
 void UART_transmit(uint8_t data);
