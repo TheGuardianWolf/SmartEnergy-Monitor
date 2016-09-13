@@ -56,7 +56,7 @@ void ADC_setChannel(uint8_t ch);
 
 void ADC_processData(struct ADCData *storage, int16_t data);
 
-float ADC_convertToVoltage(int16_t adcValue);
+float ADC_convertToVoltage(float adcValue);
 
 void ADC_passToMain();
 

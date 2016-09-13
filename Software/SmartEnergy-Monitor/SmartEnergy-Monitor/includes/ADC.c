@@ -73,7 +73,7 @@ void ADC_processData(struct ADCData *storage, int16_t data)
 	storage->value = data;
 }
 
-float ADC_convertToVoltage(int16_t adcValue)
+float ADC_convertToVoltage(float adcValue)
 {
 	return adcValue * ADC_sensitivity;
 }

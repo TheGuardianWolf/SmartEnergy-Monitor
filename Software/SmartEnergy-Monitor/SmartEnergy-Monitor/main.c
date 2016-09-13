@@ -32,8 +32,8 @@ static uint16_t periodSumArray[ARRAY_COUNT_MAX];
 static uint16_t sampleCountSum = 0;
 static uint16_t sampleCountSumArray[ARRAY_COUNT_MAX];
 static float sampleCountAverage = 0;
-static const float vScale = 12.0;
-static const float iScale = 0.30356;
+static const float vScale = 14.6374753489308;
+static const float iScale = 0.565753422251559;
 
 static struct SignalData lastVoltageCopy;
 static struct SignalData lastCurrentCopy;
@@ -100,8 +100,8 @@ void runningAverageSetDisplay()
 {
 	sampleCountAverage = (float) sampleCountSum / ARRAY_COUNT_MAX;
 	Display_values[vRMS] = ADC_convertToVoltage(sqrt((float) voltageSquaredSum / (ARRAY_COUNT_MAX * sampleCountAverage))) * vScale; 
-	Display_values[iMAX] = ADC_convertToVoltage((float) currentMaxSum / (ARRAY_COUNT_MAX * sampleCountAverage)) * iScale; 
-	Display_values[pAVG] = ADC_convertToVoltage((float) powerSum / (ARRAY_COUNT_MAX * sampleCountAverage)) * vScale * iScale; 
+	Display_values[iMAX] = ADC_convertToVoltage((float) currentMaxSum / (ARRAY_COUNT_MAX)) * iScale; 
+	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((float) powerSum / (ARRAY_COUNT_MAX * sampleCountAverage))) * vScale * iScale; 
 	Display_values[frequency] = (float) (periodCountMax * ARRAY_COUNT_MAX) / periodSum;
 	Display_values[phaseDifference] = ((float) periodSum / (periodCountMax * ARRAY_COUNT_MAX)) * 360 / ((float) periodDifferenceSum / (periodCountMax * ARRAY_COUNT_MAX));
 }

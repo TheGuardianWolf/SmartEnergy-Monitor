@@ -22,11 +22,11 @@ static uint8_t displayUpdateDelay = 0;
 static uint8_t displayIndex = 0;
 static uint8_t Display_names[5][4] = 
 {
-	{'U', 'o', 'l', 'A'},
+	{'V', 'o', 'l', 't'},
 	{'C', 'u', 'r', 'r'},
-	{'P', 'o', 'E', 'r'},
-	{'F', 'r', 'E', 'E'},
-	{'P', 'H', 'A', 'S'}
+	{'P', 'o', 'e', 'r'},
+	{'F', 'r', 'e', 'e'},
+	{'P', 'h', 'A', 'S'}
 };
 
 void Display_init()
@@ -69,12 +69,16 @@ uint8_t Display_encodeChar(uint8_t character)
 		return 0b01001110;
 		case 'd':
 		return 0b00111101;
+		case 'e':
+		return 0b01101111;
 		case 'E':
 		return 0b01001111;
 		case 'F':
 		return 0b01000111;
 		case 'H':
 		return 0b00110111;
+		case 'h':
+		return 0b00010110;
 		case 'I':
 		return 0b00000110;
 		case 'l':
@@ -93,10 +97,14 @@ uint8_t Display_encodeChar(uint8_t character)
 		return 0b00000101;
 		case 'S':
 		return 0b01011011;
+		case 't':
+		return 0b00001111;
 		case 'u':
 		return 0b00011100;
 		case 'U':
 		return 0b00111110;
+		case 'V':
+		return 0b00100111;
 		case 'y':
 		return 0b00111011;
 		case 'Z':
@@ -167,16 +175,20 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 	if (value < 0)
 	{
 		result[0] = '-';
-		dec = abs(dec);
+		dec = -dec;
+		value = -value;
 		charsUsed++;
 	}
 	
-	for (uint16_t i = 1000; i >= 1; i /= 10)
+	if (dec > 0)
 	{
-		if (dec > i)
+		for (uint16_t i = 1000; i >= 1; i /= 10)
 		{
-			result[charsUsed] = dec / i % 10 + '0';
-			charsUsed++;
+			if (dec > i)
+			{
+				result[charsUsed] = dec / i % 10 + '0';
+				charsUsed++;
+			}
 		}
 	}
 	
@@ -217,7 +229,7 @@ ISR( TIMER0_OVF_vect )
 				tempArray[i] = Display_names[displayIndex][i];
 			}
 			Display_encode(tempArray, 4);
-			if (stateDelay >= 4) 
+			if (stateDelay >= 8) 
 			{
 				stateDelay = 0;
 				Display_state++;
