@@ -34,10 +34,10 @@ void Buffer_fill(uint8_t *data)
 void UART_init()
 {
 	UCSR0C = (1 << UPM00) | (1 << UPM01) | (1 << USBS0) | (1 << UCSZ00) |
-			 (1 << UCSZ01); // 8-bit data, 2 stop bits, odd parity
-	UBRR0H = (BAUDRATE >> 8); // Set the prescaler on high
-	UBRR0L = BAUDRATE; // Set the prescaler on low
-	UCSR0B = (1 << TXEN0) | (1 << UDRIE0); // Enable transmitter and tx buffer interrupt
+			 (1 << UCSZ01);
+	UBRR0H = (BAUDRATE >> 8);
+	UBRR0L = BAUDRATE;
+	UCSR0B = (1 << TXEN0) | (1 << UDRIE0);
 }
 
 void UART_transmit(uint8_t data)
@@ -53,6 +53,7 @@ ISR(USART_UDRE_vect)
 {
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
+		// Load buffer and switch to next character.
 		UDR0 = Buffer_buffer[transmitIndex];
 		transmitIndex++;
 		if (transmitIndex > 4)

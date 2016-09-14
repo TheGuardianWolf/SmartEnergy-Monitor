@@ -20,14 +20,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/**
+ * Updates the sync packet.
+ * @param syncPacket Replacement sync packet.
+ */
 void Buffer_setSync(uint8_t syncPacket);
 
+/**
+ * Fills the UART buffer with new data.
+ * @param data Array pointer to new data array.
+ */
 void Buffer_fill(uint8_t *data);
 
 /**
  * Initialises the UART registers with the appropriate bits for 8-bit data, 2
  * stop bits and an odd parity bit.
- * @param baud Calculated BAUDRATE
  */
 void UART_init();
 
@@ -39,8 +46,7 @@ void UART_transmit(uint8_t data);
 
 /**
  * Transmits an array of data values
- * @param data       The array containing 8-bit data values
- * @param array_size The size of the array
+ * @param data       Pointer to the array containing 8-bit data values
  */
 void UART_transmitArray(uint8_t *data);
 

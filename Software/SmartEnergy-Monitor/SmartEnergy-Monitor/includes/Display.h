@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 
+// Enums to identify values in the display values array.
 enum DisplayParam
 {
 	vRMS,
@@ -20,9 +21,15 @@ enum DisplayParam
 	phaseDifference
 };
 
+// Declare globals
 volatile uint8_t Display_state;
 float Display_values[5];
 
+/**
+ * Initialise display registers.
+ * Change default buffer values to "On", update sync packet, enable timer0 and
+ * set prescale to 1024, enable timer0 interrupt.
+ */
 void Display_init();
 
 /**
@@ -46,6 +53,12 @@ uint8_t Display_encodeSync();
  */
 void Display_encode(uint8_t *characters, uint8_t decimal_index);
 
+/**
+ * Converts a float to a 4 character array.
+ * @param value        Float to be converted.
+ * @param result       Pointer to array storage of size 4+.
+ * @param decimalIndex Pointer to a 8-bit int.
+ */
 void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex);
 
 #endif /* DISPLAY_H_ */

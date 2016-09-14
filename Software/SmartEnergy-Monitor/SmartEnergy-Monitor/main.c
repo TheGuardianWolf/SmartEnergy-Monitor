@@ -15,19 +15,22 @@
 #include <math.h>
 #include <string.h>
 #include <util/atomic.h>
-#include <util/delay.h>
 
+// Secondary averaging maximum samples.
 #define ARRAY_COUNT_MAX 50
 
+// Scale values load values / circuit output.
 static const float vScale = 14.6374753489308;
 static const float iScale = 0.565753422251559;
 
+// Optimised copy of data (Non volatile).
 static struct SignalData lastVoltageCopy;
 static struct SignalData lastCurrentCopy;
 static struct PowerData lastPowerCopy;
 static uint16_t lastPeriodTimeSumCopy;
 static int16_t lastVCTDSumCopy;
 
+// Secondary averaging values.
 static uint8_t arrayCount = 0;
 static uint32_t voltageSquaredSum = 0;
 static uint32_t voltageSquaredSumArray[ARRAY_COUNT_MAX];
@@ -41,8 +44,10 @@ static uint32_t periodSum = 0;
 static uint16_t periodSumArray[ARRAY_COUNT_MAX];
 static uint16_t sampleCountSum = 0;
 static uint16_t sampleCountSumArray[ARRAY_COUNT_MAX];
-static float sampleCountAverage = 0;
 
+/**
+ * Clears the secondary averaging arrays.
+ */
 static void runningAverageClear()
 {
 	voltageSquaredSum = 0;
@@ -57,9 +62,12 @@ static void runningAverageClear()
 	memset(periodSumArray, 0, sizeof(periodSumArray));
 }
 
+/**
+ * Copies over volatile variables to optimised variables and processes the
+ * secondary averaging.
+ */
 static void runningAverageFill()
 {
-	Signal_mainDataReady = 0;
 	lastVoltageCopy = lastVoltage;
 	lastCurrentCopy = lastCurrent;
 	lastPowerCopy = lastPower;
@@ -98,26 +106,31 @@ static void runningAverageFill()
 	}
 }
 
+/**
+ * Populates display values array with their respective values.
+ */
 void runningAverageSetDisplay()
 {
-	sampleCountAverage = (float) sampleCountSum / ARRAY_COUNT_MAX;
-	Display_values[vRMS] = ADC_convertToVoltage(sqrt((float) voltageSquaredSum / (ARRAY_COUNT_MAX * sampleCountAverage))) * vScale; 
-	Display_values[iMAX] = ADC_convertToVoltage((float) currentMaxSum / (ARRAY_COUNT_MAX)) * iScale; 
-	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((float) powerSum / (ARRAY_COUNT_MAX * sampleCountAverage))) * vScale * iScale; 
+	Display_values[vRMS] = ADC_convertToVoltage(sqrt((float) voltageSquaredSum / sampleCountSum)) * vScale;
+	Display_values[iMAX] = ADC_convertToVoltage((float) currentMaxSum / (ARRAY_COUNT_MAX)) * iScale;
+	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((float) powerSum / sampleCountSum)) * vScale * iScale;
 	Display_values[frequency] = (float) (periodCountMax * ARRAY_COUNT_MAX) / periodSum;
 	Display_values[phaseDifference] = ((float) periodSum / (periodCountMax * ARRAY_COUNT_MAX)) * 360 / ((float) periodDifferenceSum / (periodCountMax * ARRAY_COUNT_MAX));
 }
 
 int main(void)
 {
+	// Clear secondary averaging arrays and initialise the system.
 	runningAverageClear();
 	System_init();
 
-	// The Loop
+	// The Loop.
 	while(1)
 	{
-		if(Signal_mainDataReady)
+		// Process recieved data when it is ready.
+		if(ADC_dataReady)
 		{
+			ADC_dataReady = 0; // Remove the ready flag.
 			runningAverageFill();
 			runningAverageSetDisplay();
 		}

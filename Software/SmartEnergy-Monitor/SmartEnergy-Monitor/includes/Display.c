@@ -12,15 +12,17 @@
 #include <avr/io.h>
 #include <util/atomic.h>
 
-#define DISPLAY_INDEX_MAX 2
+#define DISPLAY_INDEX_MAX 2 // Disable display parameters using this.
 
+// Declare globals.
 volatile uint8_t Display_state = 0;
 float Display_values[5] = {0, 0, 0, 0, 0};
 
+// Declare locals.
 static uint8_t stateDelay = 0;
 static uint8_t displayUpdateDelay = 0;
 static uint8_t displayIndex = 0;
-static uint8_t Display_names[5][4] = 
+static uint8_t Display_names[5][4] =
 {
 	{'V', 'o', 'l', 't'},
 	{'C', 'u', 'r', 'r'},
@@ -146,14 +148,16 @@ void Display_encode(uint8_t *characters, uint8_t decimalIndex)
 		characters[i] = Display_encodeChar(characters[i]);
 		if (i == decimalIndex)
 		{
-			characters[i] |= (1 << 7); 				// Bit twiddling to enable the dp bit
+			characters[i] |= (1 << 7); // Bit twiddling to enable the dp bit
 		}
 	}
 }
 
 void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 {
-	int16_t dec = value;
+	int16_t dec = value; // Convert to whole number.
+
+	// Check for display overflow.
 	if (dec > 9999 || dec < -999)
 	{
 		result[0] = 'O';
@@ -164,6 +168,7 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 		return;
 	}
 
+	// Check if value too small.
 	if (value < 0.0005 && value > -0.0005)
 	{
 		result[0] = '0';
@@ -174,8 +179,11 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 		return;
 	}
 
+	// Record characters used.
 	uint8_t charsUsed = 0;
 
+	// Add negative sign if value is negative. Uses the float as the int could
+	// be 0.
 	if (value < 0)
 	{
 		result[0] = '-';
@@ -183,19 +191,21 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 		value = -value;
 		charsUsed++;
 	}
-	
+
+	// If there are values before the decimal point.
 	if (dec > 0)
 	{
-		for (uint16_t i = 1000; i >= 1; i /= 10)
+		for (uint16_t i = 1000; i > 0; i /= 10)
 		{
-			if (dec > i)
+			if (dec >= i)
 			{
 				result[charsUsed] = dec / i % 10 + '0';
 				charsUsed++;
 			}
 		}
 	}
-	
+
+	// If no characters were used.
 	if (charsUsed == 0)
 	{
 		result[0] = '0';
@@ -203,15 +213,18 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 		charsUsed++;
 	}
 
+	// Set the decimal index to the current position.
 	*decimalIndex = charsUsed - 1;
 
+	// Fill the rest of the character array with decimals.
 	while (charsUsed < 3)
 	{
 		value = value * 10;
-		result[charsUsed] = ((uint32_t) value) % 10 + '0';	
+		result[charsUsed] = ((uint32_t) value) % 10 + '0';
 		charsUsed++;
 	}
 
+	// For the last one, round.
 	if (charsUsed == 3)
 	{
 		result[charsUsed] = ((uint32_t) (value + 0.5)) % 10 + '0';
@@ -219,39 +232,49 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 	}
 }
 
+// Display controller using timer0.
 ISR( TIMER0_OVF_vect )
 {
+	// Delay display updates by 25 ticks.
 	if (displayUpdateDelay >= 25)
 	{
 		displayUpdateDelay = 0;
 		uint8_t tempArray[4];
 		uint8_t tempDecimalIndex = 0;
+
+		// Parameter name display state.
 		if (Display_state == 0)
 		{
 			for (uint8_t i = 0; i < 4; i++)
 			{
 				tempArray[i] = Display_names[displayIndex][i];
 			}
+
 			Display_encode(tempArray, 4);
-			if (stateDelay >= 8) 
+
+			// Delay by 8 update units.
+			if (stateDelay >= 8)
 			{
 				stateDelay = 0;
 				Display_state++;
-				Display_state &= 1;	
+				Display_state &= 1;
 			}
 		}
+		// Parameter value display state.
 		else if (Display_state == 1)
 		{
 			Display_floatToChar(Display_values[displayIndex], tempArray, &tempDecimalIndex);
 			Display_encode(tempArray, tempDecimalIndex);
-			if (stateDelay >= 16) 
+
+			// Delay by 16 update units.
+			if (stateDelay >= 16)
 			{
 				stateDelay = 0;
 				Display_state++;
-				Display_state &= 1;	
+				Display_state &= 1;
 
 				displayIndex++;
-				if (displayIndex > DISPLAY_INDEX_MAX) 
+				if (displayIndex > DISPLAY_INDEX_MAX)
 				{
 					displayIndex = 0;
 				}
@@ -261,5 +284,4 @@ ISR( TIMER0_OVF_vect )
 		UART_transmitArray(tempArray);
 	}
 	displayUpdateDelay++;
-	
 }

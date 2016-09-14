@@ -9,14 +9,30 @@
 #ifndef SYSTEM_H_
 #define SYSTEM_H_
 
-#include <avr/io.h>
+#include <stdint.h>
 
+/**
+ * Initialise the system.
+ * Turns on ADC, Display, Interface, and UART.
+ */
 void System_init();
 
+/**
+ * Initialise and reset system clock.
+ * Enable timer1, set prescaler to 64, enable timer1 interrupt.
+ */
 void System_initClock();
 
-uint32_t System_getTimeMicro();
+/**
+ * Get time in microseconds.
+ * @return Time in microseconds.
+ */
+uint64_t System_getTimeMicro();
 
-uint32_t System_getTimeMilli();
+/**
+ * Get time in milliseconds.
+ * @return Time in milliseconds.
+ */
+uint64_t System_getTimeMilli();
 
 #endif /* SYSTEM_H_ */

@@ -14,19 +14,22 @@
 #include <util/atomic.h>
 #include <limits.h>
 
-// ADC, SIGNAL, POWER
+// ADC, SIGNAL, POWER classes ported from C++
 
+// Initialise constants/
 const uint8_t periodCountMax = 20;
 const float ADC_sensitivity = 4.882813e-3;
 
+// Set global data transfer variables.
 volatile uint8_t ADC_state = 0;
-volatile bool Signal_mainDataReady = false;
+volatile bool ADC_dataReady = false;
 volatile uint16_t lastPeriodTimeSum = 0;
 volatile int16_t lastVCTDSum = 0;
 volatile struct PowerData lastPower = {0, 0, INT_MIN, INT_MAX};
 volatile struct SignalData lastVoltage = {0, 0, -1024, 1024, 0, 0};
 volatile struct SignalData lastCurrent = {0, 0, -1024, 1024, 0, 0};
 
+// Set local variables.
 static int16_t rawData = 0;
 static int16_t data = 0;
 static uint8_t ADC_channel = 2;
@@ -34,7 +37,7 @@ static int16_t nullVal = 338;
 static const uint16_t DCSampleCountMax = 512;
 static uint8_t periodCount = 0;
 static uint16_t periodTimeSum = 0;
-static int16_t voltageCurrentTimeDifferenceSum = 0;
+static int16_t VCTDSum = 0;
 static struct ADCData voltageData = {0, 0};
 static struct ADCData currentData = {0, 0};
 static struct SignalData voltage = {0, 0, -1024, 1024, 0, 0};
@@ -59,6 +62,7 @@ void ADC_initComparators()
 
 void ADC_setChannel(uint8_t ch)
 {
+	// Check if valid channel number.
 	if (ch < 8)
 	{
 		ADMUX &= 0b11100000;
@@ -78,12 +82,16 @@ float ADC_convertToVoltage(float adcValue)
 	return adcValue * ADC_sensitivity;
 }
 
-void ADC_passToMain()
+void ADC_setDataReady()
 {
 	lastVoltage = voltage;
 	lastCurrent = current;
 	lastPower = power;
-	Signal_mainDataReady = true;
+	lastPeriodTimeSum = periodTimeSum;
+	lastVCTDSum = VCTDSum;
+	ADC_dataReady = true;
+	periodTimeSum = 0;
+	VCTDSum = 0;
 	periodCount = 0;
 	Signal_clear(&voltage);
 	Signal_clear(&current);
@@ -145,7 +153,7 @@ ISR(ADC_vect)
 		rawData = ADCL | (ADCH << 8);
 	}
 
-	// initialization
+	// Initialization
 	if (ADC_state == 0)
 	{
 		ADC_setChannel(0);
@@ -186,7 +194,7 @@ ISR(ADC_vect)
 					{
 						ADC_setChannel(2);
 						ADC_state = 0;
-						ADC_passToMain();
+						ADC_setDataReady();
 					}
 				}
 			}
@@ -211,7 +219,7 @@ ISR(ADC_vect)
 					{
 						ADC_setChannel(2);
 						ADC_state = 0;
-						ADC_passToMain();
+						ADC_setDataReady();
 					}
 				}
 			}
@@ -219,9 +227,10 @@ ISR(ADC_vect)
 	}
 }
 
-ISR(INT1_vect) // Voltage zero crossing
+// Voltage zero crossing
+ISR(INT1_vect)
 {
-	uint32_t currentTime;
+	uint64_t currentTime;
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		currentTime = System_getTimeMicro();
@@ -229,9 +238,10 @@ ISR(INT1_vect) // Voltage zero crossing
 	voltage.lastPeriod = currentTime;
 }
 
-ISR(INT0_vect) // Current zero crossing
+// Current zero crossing
+ISR(INT0_vect)
 {
-	uint32_t currentTime;
+	uint64_t currentTime;
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		currentTime = System_getTimeMicro();
@@ -244,7 +254,7 @@ ISR(INT0_vect) // Current zero crossing
 			Signal_clear(&voltage);
 			Signal_clear(&current);
 			Power_clear();
-			
+
 			Signal_processData(&voltage, voltageData.value);
 			Signal_processData(&current, currentData.value);
 			Power_processData();
@@ -254,7 +264,7 @@ ISR(INT0_vect) // Current zero crossing
 	{
 		periodCount++;
 		periodTimeSum += currentTime - current.lastPeriod;
-		voltageCurrentTimeDifferenceSum += currentTime - voltage.lastPeriod;
+		VCTDSum += currentTime - voltage.lastPeriod;
 	}
 	current.lastPeriod = currentTime;
 }
