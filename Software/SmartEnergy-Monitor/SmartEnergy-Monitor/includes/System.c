@@ -18,7 +18,7 @@
 #define clockCyclesPerMicro F_CPU / 1000000
 
 // Define locals.
-static uint64_t clockOverflowCount = 0;
+static volatile uint64_t clockOverflowCount = 0;
 static const uint8_t clockScaleFactorMicro = clockCyclesPerMicro / 8;
 static const uint16_t clockScaleFactorMilli = (clockCyclesPerMicro / 8) * 1000;
 
@@ -57,12 +57,13 @@ uint64_t System_getTimeMicro()
 	}
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		time = (((uint64_t)TCNT1 + clockOverflowCount * ((uint64_t)((uint16_t) -1) + 1)) / clockScaleFactorMicro);
+		uint16_t count = TCNT1;
+		time = (((uint64_t) count + clockOverflowCount * ((uint64_t)((uint16_t) -1) + 1)) / clockScaleFactorMicro);
 	}
 	return time;
 }
 
-uint32_t System_getTimeMilli()
+uint64_t System_getTimeMilli()
 {
 	uint64_t time;
 	// Let any pending timer interrupts fire.
@@ -71,7 +72,8 @@ uint32_t System_getTimeMilli()
 	}
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		time = (((uint64_t)TCNT1 + clockOverflowCount * ((uint64_t)((uint16_t) -1) + 1)) * clockScaleFactorMilli);
+		uint16_t count = TCNT1;
+		time = (((uint64_t) count + clockOverflowCount * ((uint64_t)((uint16_t) -1) + 1)) / clockScaleFactorMilli);
 	}
 	return time;
 }

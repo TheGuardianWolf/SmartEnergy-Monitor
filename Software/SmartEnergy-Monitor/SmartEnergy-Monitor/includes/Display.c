@@ -7,6 +7,7 @@
 
 #include "Display.h"
 #include "UART.h"
+#include "System.h"
 
 #include <stdlib.h>
 #include <avr/io.h>
@@ -19,8 +20,8 @@ volatile uint8_t Display_state = 0;
 float Display_values[5] = {0, 0, 0, 0, 0};
 
 // Declare locals.
+static uint64_t delayStart = 0;
 static uint8_t stateDelay = 0;
-static uint8_t displayUpdateDelay = 0;
 static uint8_t displayIndex = 0;
 static uint8_t Display_names[5][4] =
 {
@@ -28,19 +29,15 @@ static uint8_t Display_names[5][4] =
 	{'C', 'u', 'r', 'r'},
 	{'P', 'o', 'e', 'r'},
 	{'F', 'r', 'e', 'e'},
-	{'P', 'h', 'A', 'S'}
+	{'P', 'h', 'A', '5'}
 };
 
 void Display_init()
 {
 	uint8_t initData[4] = {0b01111110, 0b00010101, 0, 0};
 	Buffer_setSync(Display_encodeSync());
+	Buffer_setTerm(Display_encodeTerm());
 	Buffer_fill(initData);
-
-	TCCR0A = 0;
-	TCCR0B = (1 << CS02) | (1 << CS00);
-	TIMSK0 = (1 << TOIE0);
-	TCNT0  = 0;
 }
 
 uint8_t Display_encodeChar(uint8_t character)
@@ -85,8 +82,6 @@ uint8_t Display_encodeChar(uint8_t character)
 		return 0b00110111;
 		case 'h':
 		return 0b00010110;
-		case 'I':
-		return 0b00000110;
 		case 'l':
 		return 0b00000110;
 		case 'L':
@@ -101,8 +96,6 @@ uint8_t Display_encodeChar(uint8_t character)
 		return 0b01100111;
 		case 'r':
 		return 0b00000101;
-		case 'S':
-		return 0b01011011;
 		case 't':
 		return 0b00001111;
 		case 'u':
@@ -113,8 +106,6 @@ uint8_t Display_encodeChar(uint8_t character)
 		return 0b00100111;
 		case 'y':
 		return 0b00111011;
-		case 'Z':
-		return 0b01101101;
 		case '-':
 		return 0b00000001;
 		case '_':
@@ -125,8 +116,6 @@ uint8_t Display_encodeChar(uint8_t character)
 		return 0b00100010;
 		case '^':
 		return 0b01100010;
-		case '[':
-		return 0b01001110;
 		case ']':
 		return 0b01111000;
 		case ' ':
@@ -138,7 +127,12 @@ uint8_t Display_encodeChar(uint8_t character)
 
 uint8_t Display_encodeSync()
 {
-	return 0b01001001;
+	return 0b11100000;
+}
+
+uint8_t Display_encodeTerm()
+{
+	return 0b11000010;
 }
 
 void Display_encode(uint8_t *characters, uint8_t decimalIndex)
@@ -232,13 +226,13 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 	}
 }
 
-// Display controller using timer0.
-ISR( TIMER0_OVF_vect )
+// Transmits 4 characters in 6 ms @ 9600 baud, 1 parity, 8 data, 2 stop.
+void Display_runStateMachine()
 {
-	// Delay display updates by 25 ticks.
-	if (displayUpdateDelay >= 25)
+	uint64_t updateDelay = System_getTimeMilli() - delayStart;
+	if (updateDelay > 400)
 	{
-		displayUpdateDelay = 0;
+		delayStart = System_getTimeMilli();
 		uint8_t tempArray[4];
 		uint8_t tempDecimalIndex = 0;
 
@@ -266,8 +260,8 @@ ISR( TIMER0_OVF_vect )
 			Display_floatToChar(Display_values[displayIndex], tempArray, &tempDecimalIndex);
 			Display_encode(tempArray, tempDecimalIndex);
 
-			// Delay by 16 update units.
-			if (stateDelay >= 16)
+			// Delay by 20 update units.
+			if (stateDelay >= 20)
 			{
 				stateDelay = 0;
 				Display_state++;
@@ -283,5 +277,4 @@ ISR( TIMER0_OVF_vect )
 		stateDelay++;
 		UART_transmitArray(tempArray);
 	}
-	displayUpdateDelay++;
 }

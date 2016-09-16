@@ -46,6 +46,8 @@ uint8_t Display_encodeChar(uint8_t character);
  */
 uint8_t Display_encodeSync();
 
+uint8_t Display_encodeTerm();
+
 /**
  * Encodes an array of up to 4 characters inplace using encode char.
  * @param characters    The pointer to the array to be encoded
@@ -60,5 +62,7 @@ void Display_encode(uint8_t *characters, uint8_t decimal_index);
  * @param decimalIndex Pointer to a 8-bit int.
  */
 void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex);
+
+void Display_runStateMachine();
 
 #endif /* DISPLAY_H_ */

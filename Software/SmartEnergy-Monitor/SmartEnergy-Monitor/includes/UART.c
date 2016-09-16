@@ -14,11 +14,16 @@
 // BUFFER and UART
 
 static uint8_t transmitIndex = 0;
-static uint8_t Buffer_buffer[5] = {0, 0, 0, 0, 0}; // Pre-fill values to display "On"
+static uint8_t Buffer_buffer[6] = {0, 0, 0, 0, 0, 0}; // Pre-fill values to display "On"
 
 void Buffer_setSync(uint8_t syncPacket)
 {
 	Buffer_buffer[0] = syncPacket;
+}
+
+void Buffer_setTerm(uint8_t termPacket)
+{
+	Buffer_buffer[5] = termPacket;
 }
 
 void Buffer_fill(uint8_t *data)
@@ -56,7 +61,7 @@ ISR(USART_UDRE_vect)
 		// Load buffer and switch to next character.
 		UDR0 = Buffer_buffer[transmitIndex];
 		transmitIndex++;
-		if (transmitIndex > 4)
+		if (transmitIndex > 5)
 		{
 			transmitIndex = 0;
 		}

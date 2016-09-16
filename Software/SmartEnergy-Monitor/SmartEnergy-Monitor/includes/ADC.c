@@ -146,6 +146,7 @@ void Power_clear()
 	power.sum = 0;
 }
 
+// To ensure readings are done as soon as possible after they are taken from the ADC, we have a pretty filled up ISR unfortunately.
 ISR(ADC_vect)
 {
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)

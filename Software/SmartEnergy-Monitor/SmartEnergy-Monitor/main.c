@@ -1,15 +1,16 @@
 /*
- * SmartEnergy-Monitor.c
- * Code for the wireless energy monitor. Odd parity is enabled for transmission.
- * Group 10
- *
- * Created: 12/08/2016 12:38:02 PM
- * Author : Jerry Fan
- */
+* SmartEnergy-Monitor.c
+* Code for the wireless energy monitor. Odd parity is enabled for transmission.
+* Group 10
+*
+* Created: 12/08/2016 12:38:02 PM
+* Author : Jerry Fan
+*/
 
 #include "includes/System.h"
 #include "includes/ADC.h"
 #include "includes/Display.h"
+#include "includes/Interface.h"
 
 #include <stdbool.h>
 #include <math.h>
@@ -18,6 +19,7 @@
 
 // Secondary averaging maximum samples.
 #define ARRAY_COUNT_MAX 50
+#define RATED_POWER 8.5
 
 // Scale values load values / circuit output.
 static const float vScale = 14.6374753489308;
@@ -46,8 +48,8 @@ static uint16_t sampleCountSum = 0;
 static uint16_t sampleCountSumArray[ARRAY_COUNT_MAX];
 
 /**
- * Clears the secondary averaging arrays.
- */
+* Clears the secondary averaging arrays.
+*/
 static void runningAverageClear()
 {
 	voltageSquaredSum = 0;
@@ -63,9 +65,9 @@ static void runningAverageClear()
 }
 
 /**
- * Copies over volatile variables to optimised variables and processes the
- * secondary averaging.
- */
+* Copies over volatile variables to optimised variables and processes the
+* secondary averaging.
+*/
 static void runningAverageFill()
 {
 	lastVoltageCopy = lastVoltage;
@@ -107,8 +109,8 @@ static void runningAverageFill()
 }
 
 /**
- * Populates display values array with their respective values.
- */
+* Populates display values array with their respective values.
+*/
 void runningAverageSetDisplay()
 {
 	Display_values[vRMS] = ADC_convertToVoltage(sqrt((float) voltageSquaredSum / sampleCountSum)) * vScale;
@@ -117,6 +119,33 @@ void runningAverageSetDisplay()
 	Display_values[frequency] = (float) (periodCountMax * ARRAY_COUNT_MAX) / periodSum;
 	Display_values[phaseDifference] = ((float) periodSum / (periodCountMax * ARRAY_COUNT_MAX)) * 360 / ((float) periodDifferenceSum / (periodCountMax * ARRAY_COUNT_MAX));
 }
+
+void runningAverageSetLED()
+{
+	float power = Display_values[pAVG];
+	if (power < 0)
+	{
+		power = -power;
+	}
+	if (power <= (RATED_POWER * 0.25))
+	{
+		Interface_state = 0;
+	}
+	else if (power <= (RATED_POWER * 0.5))
+	{
+		Interface_state = 1;
+	}
+	else if (power <= (RATED_POWER * 0.75))
+	{
+		Interface_state = 2;
+	}
+	else
+	{
+		Interface_state = 3;
+	}
+}
+
+
 
 int main(void)
 {
@@ -133,7 +162,10 @@ int main(void)
 			ADC_dataReady = 0; // Remove the ready flag.
 			runningAverageFill();
 			runningAverageSetDisplay();
-		}
+			runningAverageSetLED();
 
+			Interface_runStateMachine();
+			Display_runStateMachine();
+		}
 	}
 }

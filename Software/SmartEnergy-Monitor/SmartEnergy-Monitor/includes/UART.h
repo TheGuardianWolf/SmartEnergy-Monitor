@@ -26,6 +26,8 @@
  */
 void Buffer_setSync(uint8_t syncPacket);
 
+void Buffer_setTerm(uint8_t termPacket);
+
 /**
  * Fills the UART buffer with new data.
  * @param data Array pointer to new data array.

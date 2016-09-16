@@ -10,6 +10,11 @@
 #define INTERACTIVE_H_
 
 #include <stdbool.h>
+#include <stdint.h>
+
+// Declare globals.
+volatile uint8_t Interface_state;
+volatile bool Interface_ledIsOn;
 
 /**
  * Initialise the IO registers for reading/writing.
@@ -39,4 +44,7 @@ void Interface_ledToggle();
  */
 bool Interface_buttonIsPressed();
 
+void Interface_ledBlink(uint16_t delay, uint16_t hold);
+
+void Interface_runStateMachine();
 #endif /* INTERACTIVE_H_ */
