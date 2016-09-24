@@ -44,7 +44,7 @@ void Interface_ledToggle();
  */
 bool Interface_buttonIsPressed();
 
-void Interface_ledBlink(uint16_t delay, uint16_t hold);
+void Interface_ledBlink(uint16_t off, uint16_t hold);
 
 void Interface_runStateMachine();
 #endif /* INTERACTIVE_H_ */

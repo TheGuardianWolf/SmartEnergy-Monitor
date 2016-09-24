@@ -9,6 +9,7 @@
 
 #include "includes/System.h"
 #include "includes/ADC.h"
+#include "includes/UART.h"
 #include "includes/Display.h"
 #include "includes/Interface.h"
 
@@ -46,6 +47,24 @@ static uint32_t periodSum = 0;
 static uint16_t periodSumArray[ARRAY_COUNT_MAX];
 static uint16_t sampleCountSum = 0;
 static uint16_t sampleCountSumArray[ARRAY_COUNT_MAX];
+
+/**
+ * Initialise the system.
+ * Turns on ADC, Display, Interface, and UART.
+ * Extends the System namespace.
+ */
+void System_init()
+{
+	ATOMIC_BLOCK(ATOMIC_FORCEON)
+	{
+		System_initClock();
+		ADC_init();
+		ADC_initComparators();
+		Interface_init();
+		UART_init();
+		Display_init();
+	}
+}
 
 /**
 * Clears the secondary averaging arrays.

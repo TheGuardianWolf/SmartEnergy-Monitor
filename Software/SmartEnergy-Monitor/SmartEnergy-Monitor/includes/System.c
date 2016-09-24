@@ -6,10 +6,6 @@
 */
 
 #include "System.h"
-#include "ADC.h"
-#include "UART.h"
-#include "Display.h"
-#include "Interface.h"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -22,19 +18,6 @@ static volatile uint64_t clockOverflowCount = 0;
 static const uint8_t clockScaleFactorMicro = clockCyclesPerMicro / 8;
 static const uint16_t clockScaleFactorMilli = (clockCyclesPerMicro / 8) * 1000;
 
-void System_init()
-{
-	ATOMIC_BLOCK(ATOMIC_FORCEON)
-	{
-		System_initClock();
-		ADC_init();
-		ADC_initComparators();
-		Interface_init();
-		UART_init();
-		Display_init();
-	}
-}
-
 void System_initClock()
 {
 	TCCR1A = 0;
@@ -45,7 +28,11 @@ void System_initClock()
 
 void System_resetClock()
 {
-	TCNT1 = 0;
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		clockOverflowCount = 0;
+		TCNT1 = 0;
+	}
 }
 
 uint64_t System_getTimeMicro()

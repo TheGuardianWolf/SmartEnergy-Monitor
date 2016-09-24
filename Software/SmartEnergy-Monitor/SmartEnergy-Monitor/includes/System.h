@@ -12,12 +12,6 @@
 #include <stdint.h>
 
 /**
- * Initialise the system.
- * Turns on ADC, Display, Interface, and UART.
- */
-void System_init();
-
-/**
  * Initialise and reset system clock.
  * Enable timer1, set prescaler to 64, enable timer1 interrupt.
  */
