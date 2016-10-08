@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 // Declare globals.
-volatile uint8_t Interface_state;
+volatile uint8_t Interface_ledState;
 volatile bool Interface_ledIsOn;
 
 /**
@@ -44,7 +44,18 @@ void Interface_ledToggle();
  */
 bool Interface_buttonIsPressed();
 
+/**
+ * An LED blink is composed of 2 components, the on time, and the off time.
+ * A short blink has a short on time, whilst a long blink has a long on time.
+ * To calculate the blink timing, use blink interval - hold on time = off.
+ * @param off  Delay to hold LED off.
+ * @param hold Delay to hold LED on.
+ */
 void Interface_ledBlink(uint16_t off, uint16_t hold);
 
+/**
+ * State machine intended to be run in the main loop. Controls all Interface
+ * outputs.
+ */
 void Interface_runStateMachine();
 #endif /* INTERACTIVE_H_ */

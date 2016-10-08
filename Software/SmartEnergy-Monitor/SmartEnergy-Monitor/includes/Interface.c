@@ -12,26 +12,21 @@
 #include <avr/io.h>
 
 // Initialise globals.
-volatile uint8_t Interface_state = 0;
+volatile uint8_t Interface_ledState = 0;
 volatile bool Interface_ledIsOn = false;
 
 // Declare locals.
-static uint64_t delayStart = 0;
+static uint64_t ledDelayStart = 0;
 
 void Interface_init()
 {
-	DDRB |= (1<<DDB5);
-	PORTB |= (1<<PORTB5);
+	DDRB |= (1 << DDB5); // Port B5 as output.
+	PORTB |= (1 << PORTB5); // Enable pullup resistor on B5.
 
-	DDRB &= ~(1<<DDB7);
-	PORTB |= 1<<PORTB7;
+	DDRB &= ~(1 << DDB7); // Port B7 as input.
+	PORTB |= (1 << PORTB7); // Enable pullup resistor on B7.
 
-	Interface_ledOff();
-//
-	//TCCR2A = 0;
-	//TCCR2B = (1 << CS22) | (1 << CS21) | (1 << CS20);
-	//TIMSK2 = (1 << TOIE2);
-	//TCNT2 = 0;
+	Interface_ledOff(); // Start with LED off.
 }
 
 void Interface_ledOn()
@@ -58,19 +53,21 @@ bool Interface_buttonIsPressed()
 
 void Interface_ledBlink(uint16_t off, uint16_t hold)
 {
-	uint64_t delay = System_getTimeMilli() - delayStart;
+	uint64_t delay = System_getTimeMilli() - ledDelayStart; // Get the current delay value.
 	if (Interface_ledIsOn)
 	{
+		// If LED is on, hold for 'hold'  before resetting the delay start time.
 		if (delay >= hold)
 		{
-			delayStart = System_getTimeMilli();
+			ledDelayStart = System_getTimeMilli();
 			Interface_ledOff();
 		}
 	}
 	else {
+		// If LED is off, hold for 'hold' before resetting the delay start time.
 		if (delay >= off)
 		{
-			delayStart = System_getTimeMilli();
+			ledDelayStart = System_getTimeMilli();
 			Interface_ledOn();
 		}
 	}
@@ -78,7 +75,8 @@ void Interface_ledBlink(uint16_t off, uint16_t hold)
 
 void Interface_runStateMachine()
 {
-	switch (Interface_state)
+	// Controls LED blinking.
+	switch (Interface_ledState)
 	{
 		case 0:
 		Interface_ledBlink(900, 100);
@@ -97,4 +95,3 @@ void Interface_runStateMachine()
 		break;
 	}
 }
-			

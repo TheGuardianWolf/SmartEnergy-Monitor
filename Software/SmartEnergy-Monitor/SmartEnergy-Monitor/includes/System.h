@@ -12,8 +12,10 @@
 #include <stdint.h>
 
 /**
- * Initialise and reset system clock.
- * Enable timer1, set prescaler to 64, enable timer1 interrupt.
+ * Initialise and reset system clock to:
+ * - Enable Timer 1
+ * - Timer 1 prescaler to 64
+ * - Enable Timer 1 interrupt
  */
 void System_initClock();
 

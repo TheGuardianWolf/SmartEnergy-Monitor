@@ -25,16 +25,16 @@ static uint8_t stateDelay = 0;
 static uint8_t displayIndex = 0;
 static uint8_t Display_names[5][4] =
 {
-	{'V', 'o', 'l', 't'},
-	{'C', 'u', 'r', 'r'},
-	{'P', 'o', 'e', 'r'},
-	{'F', 'r', 'e', 'e'},
-	{'P', 'h', 'A', '5'}
+	{'V', 'o', 'l', 't'}, // Volt
+	{'C', 'u', 'r', 'r'}, // Curr
+	{'P', 'o', 'e', 'r'}, // Poer
+	{'F', 'r', 'e', 'e'}, // Free
+	{'P', 'h', 'A', '5'}  // Phas
 };
 
 void Display_init()
 {
-	uint8_t initData[4] = {0b01111110, 0b00010101, 0, 0};
+	uint8_t initData[4] = {0b01111110, 0b00010101, 0, 0}; // 'On  '
 	Buffer_setSync(Display_encodeSync());
 	Buffer_setTerm(Display_encodeTerm());
 	Buffer_fill(initData);
@@ -42,6 +42,8 @@ void Display_init()
 
 uint8_t Display_encodeChar(uint8_t character)
 {
+	// Have to manually encode as 7 segment display encoding has no pattern.
+	// Yes, I have to do this in reverse too in the SmartEnergy client :(.
 	switch (character)
 	{
 		case '0':
@@ -229,8 +231,12 @@ void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
 // Transmits 4 characters in 6 ms @ 9600 baud, 1 parity, 8 data, 2 stop.
 void Display_runStateMachine()
 {
+	// State machine has slower clockspeed than main clock. Clock is built using
+	// polling delay as it doesn't need to be accurate.
 	uint64_t updateDelay = System_getTimeMilli() - delayStart;
-	if (updateDelay > 400)
+
+	// Clock period 200 ms = 1 update unit.
+	if (updateDelay > 200)
 	{
 		delayStart = System_getTimeMilli();
 		uint8_t tempArray[4];
@@ -246,8 +252,8 @@ void Display_runStateMachine()
 
 			Display_encode(tempArray, 4);
 
-			// Delay by 8 update units.
-			if (stateDelay >= 8)
+			// Delay by 5 update units.
+			if (stateDelay >= 5)
 			{
 				stateDelay = 0;
 				Display_state++;
@@ -260,8 +266,8 @@ void Display_runStateMachine()
 			Display_floatToChar(Display_values[displayIndex], tempArray, &tempDecimalIndex);
 			Display_encode(tempArray, tempDecimalIndex);
 
-			// Delay by 20 update units.
-			if (stateDelay >= 20)
+			// Delay by 15 update units.
+			if (stateDelay >= 15)
 			{
 				stateDelay = 0;
 				Display_state++;

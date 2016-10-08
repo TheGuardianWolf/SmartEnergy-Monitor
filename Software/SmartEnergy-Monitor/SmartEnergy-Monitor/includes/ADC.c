@@ -17,7 +17,7 @@
 // ADC, SIGNAL, POWER classes ported from C++
 
 // Initialise constants/
-const uint8_t periodCountMax = 20;
+const uint8_t periodCountMax = 25;
 const float ADC_sensitivity = 4.882813e-3;
 
 // Set global data transfer variables.
@@ -54,9 +54,9 @@ void ADC_init()
 
 void ADC_initComparators()
 {
-	DDRD = (1 << DDD2) | (1 << DDD3);
-	PORTD = (1 << PORTD2) | (1 << PORTD3);
-	EICRA = 1;
+	DDRD &= ~(1 << DDD2) | (1 << DDD3);
+	PORTD |= (1 << PORTD2) | (1 << PORTD3);
+	EICRA = (1 << ISC11) | (1 << ISC10) | (1 << ISC01) | (1 << ISC00);
 	EIMSK = (1 << INT0) | (1<< INT1);
 }
 
@@ -73,7 +73,7 @@ void ADC_setChannel(uint8_t ch)
 
 void ADC_processData(struct ADCData *storage, int16_t data)
 {
-	storage->timestamp = System_getTimeMicro();
+	storage->timestamp = System_getTimeMicro(); // Store the current time of the sample.
 	storage->value = data;
 }
 
@@ -84,12 +84,17 @@ float ADC_convertToVoltage(float adcValue)
 
 void ADC_setDataReady()
 {
+	// Temporary storage of last read values.
 	lastVoltage = voltage;
 	lastCurrent = current;
 	lastPower = power;
 	lastPeriodTimeSum = periodTimeSum;
 	lastVCTDSum = VCTDSum;
+
+	// Turn on flag to indicate data ready.
 	ADC_dataReady = true;
+
+	// Reset all arrays, structs, variables.
 	periodTimeSum = 0;
 	VCTDSum = 0;
 	periodCount = 0;
@@ -121,6 +126,7 @@ void Signal_processData(struct SignalData *storage, int16_t data)
 	{
 		storage->min = data;
 	}
+
 }
 
 void Power_processData()
@@ -146,9 +152,13 @@ void Power_clear()
 	power.sum = 0;
 }
 
-// To ensure readings are done as soon as possible after they are taken from the ADC, we have a pretty filled up ISR unfortunately.
+// To ensure readings are done as soon as possible after they are taken from
+// the ADC, we have a pretty filled up ISR unfortunately. Due to ISR priority,
+// other interrupts can still fire so timing is still preserved for timing
+// critical operations.
 ISR(ADC_vect)
 {
+	// Block when reading the ADC value.
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		rawData = ADCL | (ADCH << 8);
@@ -160,12 +170,13 @@ ISR(ADC_vect)
 		ADC_setChannel(0);
 		ADC_state = 1;
 	}
+
 	// Read reference and set null
 	else if (ADC_state == 1)
 	{
 		ADC_setChannel(1);
-		nullVal = 338;
-		//nullVal = rawData;
+		//nullVal = 338;
+		nullVal = rawData;
 		ADC_state = 2;
 	}
 	// Measurement states
@@ -214,6 +225,9 @@ ISR(ADC_vect)
 				Signal_processData(&current, data);
 				Power_processData();
 
+				// AC mode will end when the max period count is reached, rather than
+				// being based on a sample count. This is more accurate for AC
+				// measurements.
 				if(current.sampleCount >= DCSampleCountMax || periodCount >= periodCountMax)
 				{
 					ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
@@ -243,10 +257,13 @@ ISR(INT1_vect)
 ISR(INT0_vect)
 {
 	uint64_t currentTime;
+	// Block when reading time.
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		currentTime = System_getTimeMicro();
 	}
+
+	// If in DC mode, clear everything except latest reading and switch to AC mode.
 	if (ADC_state == 2)
 	{
 		ADC_state = 3;
@@ -261,11 +278,15 @@ ISR(INT0_vect)
 			Power_processData();
 		}
 	}
+	// If in AC mode, increase the period count.
 	else if (ADC_state == 3)
 	{
 		periodCount++;
+
+		// Calculate the time of one period and the phase difference.
 		periodTimeSum += currentTime - current.lastPeriod;
 		VCTDSum += currentTime - voltage.lastPeriod;
 	}
+	// Record the current time as the last period time.
 	current.lastPeriod = currentTime;
 }

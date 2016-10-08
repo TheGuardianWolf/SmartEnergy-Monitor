@@ -8,7 +8,7 @@
 #ifndef UART_H_
 #define UART_H_
 
-// F_CPU should be defined in compile flags
+// F_CPU should be defined in symbols.
 #ifndef F_CPU
 #define F_CPU 16000000UL
 #endif
@@ -26,6 +26,11 @@
  */
 void Buffer_setSync(uint8_t syncPacket);
 
+/**
+ * Updates the display terminator. Only used in the smart energy client.
+ * Otherwise behaves as a sync packet.
+ * @param termPacket Replacement term packet.
+ */
 void Buffer_setTerm(uint8_t termPacket);
 
 /**
@@ -35,16 +40,12 @@ void Buffer_setTerm(uint8_t termPacket);
 void Buffer_fill(uint8_t *data);
 
 /**
- * Initialises the UART registers with the appropriate bits for 8-bit data, 2
- * stop bits and an odd parity bit.
+ * Initialises the UART registers with the appropriate bits for:
+ * - 8-bit data
+ * - 2 stop bits
+ * - Odd parity bit
  */
 void UART_init();
-
-/**
- * [DEPRECIATED] Transmits data
- * @param data 8 bit data to be transmitted
- */
-void UART_transmit(uint8_t data);
 
 /**
  * Transmits an array of data values

@@ -14,7 +14,7 @@
 // BUFFER and UART
 
 static uint8_t transmitIndex = 0;
-static uint8_t Buffer_buffer[6] = {0, 0, 0, 0, 0, 0}; // Pre-fill values to display "On"
+static uint8_t Buffer_buffer[6] = {0, 0, 0, 0, 0, 0};
 
 void Buffer_setSync(uint8_t syncPacket)
 {
@@ -39,14 +39,10 @@ void Buffer_fill(uint8_t *data)
 void UART_init()
 {
 	UCSR0C = (1 << UPM00) | (1 << UPM01) | (1 << USBS0) | (1 << UCSZ00) |
-			 (1 << UCSZ01);
-	UBRR0H = (BAUDRATE >> 8);
-	UBRR0L = BAUDRATE;
-	UCSR0B = (1 << TXEN0) | (1 << UDRIE0);
-}
-
-void UART_transmit(uint8_t data)
-{
+			 (1 << UCSZ01); // See header.
+	UBRR0H = (BAUDRATE >> 8); // Set correct baudrate.
+	UBRR0L = BAUDRATE; // Set correct baudrate.
+	UCSR0B = (1 << TXEN0) | (1 << UDRIE0); // Enable transmitter and interrupt.
 }
 
 void UART_transmitArray(uint8_t *data)
@@ -61,6 +57,8 @@ ISR(USART_UDRE_vect)
 		// Load buffer and switch to next character.
 		UDR0 = Buffer_buffer[transmitIndex];
 		transmitIndex++;
+
+		// Cycle index.
 		if (transmitIndex > 5)
 		{
 			transmitIndex = 0;
