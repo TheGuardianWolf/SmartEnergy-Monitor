@@ -23,7 +23,8 @@
 #define RATED_POWER 8.5
 
 // Scale values load values / circuit output. Last revised 7/10/16.
-static const float vScale = 14.47; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
+//static const float vScale = 14.47; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
+static const float vScale = 14.67; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
 static const float iScale = 0.74; // Ratio of ADC input max current to load max current. Adjust by +- 0.01.
 
 // Optimized copy of data (Non volatile).
@@ -76,7 +77,6 @@ static void runningAverageClear()
 	powerSum = 0;
 	periodDifferenceSum = 0;
 	periodSum = 0;
-	currentMax = 0;
 	memset(voltageSquaredSumArray, 0, sizeof(voltageSquaredSumArray));
 	memset(currentMaxSumArray, 0, sizeof(currentMaxSumArray));
 	memset(powerSumArray, 0, sizeof(powerSumArray));

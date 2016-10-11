@@ -267,7 +267,7 @@ void Display_runStateMachine()
 			Display_encode(tempArray, tempDecimalIndex);
 
 			// Delay by 15 update units.
-			if (stateDelay >= 15)
+			if (stateDelay >= 10)
 			{
 				stateDelay = 0;
 				Display_state++;
