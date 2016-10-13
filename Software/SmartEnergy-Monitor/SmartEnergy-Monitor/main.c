@@ -22,7 +22,7 @@
 #define ARRAY_COUNT_MAX 50
 #define RATED_POWER 8.5
 
-// Scale values load values / circuit output. Last revised 7/10/16.
+// Scale values load values / circuit output. Last revised 10/10/16.
 //static const float vScale = 14.47; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
 static const float vScale = 14.67; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
 static const float iScale = 0.74; // Ratio of ADC input max current to load max current. Adjust by +- 0.01.
@@ -105,8 +105,8 @@ static void runningAverageFill()
 
   // Average the current max values over each measurement sample (20 periods or 512 samples depending on AC/DC mode).
 	currentMaxSum -= currentMaxSumArray[arrayCount];
-	currentMaxSum += lastCurrentCopy.max - lastCurrentCopy.min; // Make use of the min samples to smooth out circuit effects.
-	currentMaxSumArray[arrayCount] = lastCurrentCopy.max - lastCurrentCopy.min;
+	currentMaxSumArray[arrayCount] = lastCurrentCopy.max - lastCurrentCopy.min; // Make use of the min samples to smooth out circuit effects.
+	currentMaxSum += currentMaxSumArray[arrayCount]; 
 
   // Average the voltage squared values over each measurement sample (20 periods or 512 samples depending on AC/DC mode).
 	powerSum -= powerSumArray[arrayCount];
@@ -140,9 +140,9 @@ static void runningAverageFill()
 */
 void runningAverageSetDisplay()
 {
-	Display_values[vRMS] = ADC_convertToVoltage(sqrt((float) voltageSquaredSum / sampleCountSum)) * vScale;
-	Display_values[iMAX] = ADC_convertToVoltage((float) currentMaxSum / (ARRAY_COUNT_MAX) / 2) * iScale;
-	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((float) powerSum / sampleCountSum)) * vScale * iScale;
+	Display_values[vRMS] = ADC_convertToVoltage(sqrt((double) voltageSquaredSum / sampleCountSum)) * vScale;
+	Display_values[iMAX] = ADC_convertToVoltage((double) currentMaxSum / (ARRAY_COUNT_MAX) / 2) * iScale;
+	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((double) powerSum / sampleCountSum)) * vScale * iScale;
 
   // Period based measurements disabled.
 	// Display_values[frequency] = ((float) (periodCountMax * ARRAY_COUNT_MAX) / periodSum) / 1000000;

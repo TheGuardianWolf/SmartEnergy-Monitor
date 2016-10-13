@@ -34,6 +34,7 @@ static int16_t rawData = 0;
 static int16_t data = 0;
 static uint8_t ADC_channel = 2;
 static int16_t nullVal = 338;
+static int8_t circuitBias = 0; // Op amps are biasing the inputs, need to reverse this.
 static const uint16_t DCSampleCountMax = 512;
 static uint8_t periodCount = 0;
 static uint16_t periodTimeSum = 0;
@@ -140,7 +141,7 @@ void Power_processData()
 	}
 	if (instantPower < power.min)
 	{
-		power.min =instantPower;
+		power.min = instantPower;
 	}
 }
 
@@ -153,9 +154,9 @@ void Power_clear()
 }
 
 // To ensure readings are done as soon as possible after they are taken from
-// the ADC, we have a pretty filled up ISR unfortunately. Due to ISR priority,
+// the ADC, a lot of code was placed in this ISR. Due to ISR priority,
 // other interrupts can still fire so timing is still preserved for timing
-// critical operations.
+// critical operations in other ISRs.
 ISR(ADC_vect)
 {
 	// Block when reading the ADC value.
@@ -182,7 +183,7 @@ ISR(ADC_vect)
 	// Measurement states
 	else
 	{
-		data = rawData - nullVal;
+		data = rawData - nullVal - circuitBias;
 
 		ADC_setChannel((ADC_channel + 1) & 1);
 
@@ -202,12 +203,9 @@ ISR(ADC_vect)
 
 				if(current.sampleCount >= DCSampleCountMax)
 				{
-					ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-					{
-						ADC_setChannel(2);
-						ADC_state = 0;
-						ADC_setDataReady();
-					}
+					ADC_setChannel(2);					
+					ADC_state = 0;
+					ADC_setDataReady();
 				}
 			}
 		}
@@ -230,12 +228,9 @@ ISR(ADC_vect)
 				// measurements.
 				if(current.sampleCount >= DCSampleCountMax || periodCount >= periodCountMax)
 				{
-					ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-					{
-						ADC_setChannel(2);
-						ADC_state = 0;
-						ADC_setDataReady();
-					}
+					ADC_setChannel(2);
+					ADC_state = 0;
+					ADC_setDataReady();
 				}
 			}
 		}
@@ -267,7 +262,9 @@ ISR(INT0_vect)
 	if (ADC_state == 2)
 	{
 		ADC_state = 3;
-		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		// The following has to be done immediately on mode switch, so it goes into this ISR. There are better ways to go about this
+		// but they require large amounts of code refactoring and time.
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE) // To be honest blocking is not needed as INT has the highest priority, but to be safe. ADC interrupt must NOT fire before this.
 		{
 			Signal_clear(&voltage);
 			Signal_clear(&current);

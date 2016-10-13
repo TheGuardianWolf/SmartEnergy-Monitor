@@ -23,7 +23,7 @@ enum DisplayParam
 
 // Declare globals
 volatile uint8_t Display_state;
-float Display_values[5];
+double Display_values[5];
 
 /**
  * Initialise display registers.
