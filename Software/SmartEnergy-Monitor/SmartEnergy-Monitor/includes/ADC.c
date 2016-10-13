@@ -16,7 +16,7 @@
 
 // ADC, SIGNAL, POWER classes ported from C++
 
-// Initialise constants/
+// Initialise constants
 const uint8_t periodCountMax = 25;
 const float ADC_sensitivity = 4.882813e-3;
 
@@ -45,6 +45,10 @@ static struct SignalData voltage = {0, 0, -1024, 1024, 0, 0};
 static struct SignalData current = {0, 0, -1024, 1024, 0, 0};
 static struct PowerData power = {0, 0, INT_MIN, INT_MAX};
 
+// Power approximation arrays.
+static int16_t previousVoltages[3] = {0, 0, 0};
+static int16_t previousCurrents[3] = {0, 0, 0};
+static int32_t previousPower[3] = {0, 0, 0};
 
 void ADC_init()
 {
@@ -72,10 +76,17 @@ void ADC_setChannel(uint8_t ch)
 	}
 }
 
-void ADC_processData(struct ADCData *storage, int16_t data)
+void ADC_processData(struct ADCData *storage, int16_t *storageArray, int16_t data)
 {
 	storage->timestamp = System_getTimeMicro(); // Store the current time of the sample.
 	storage->value = data;
+
+	// Push back other values.
+	for (uint8_t i = 2; i > 0; i--)
+	{
+		storageArray[i - 1] = storageArray[i];
+	}
+	storageArray[2] = data;
 }
 
 float ADC_convertToVoltage(float adcValue)
@@ -133,6 +144,14 @@ void Signal_processData(struct SignalData *storage, int16_t data)
 void Power_processData()
 {
 	power.sampleCount++;
+
+	for (uint8_t i = 2; i > 0; i--)
+	{
+		previousPower[i - 1] = previousPower[i];
+	}
+	previousPower[2] = 
+
+	int32_t approxPower = 
 	int32_t instantPower = (int32_t) voltageData.value * currentData.value;
 	power.sum += instantPower;
 	if (instantPower > power.max)
@@ -177,7 +196,7 @@ ISR(ADC_vect)
 	{
 		ADC_setChannel(1);
 		//nullVal = 338;
-		nullVal = rawData;
+		nullVal = rawData; // 1.65 V pin is our reference.
 		ADC_state = 2;
 	}
 	// Measurement states
@@ -192,12 +211,12 @@ ISR(ADC_vect)
 		{
 			if (ADC_channel == 0)
 			{
-				ADC_processData(&voltageData, data);
+				ADC_processData(&voltageData, &previousVoltages, data);
 				Signal_processData(&voltage, data);
 			}
 			else if (ADC_channel == 1)
 			{
-				ADC_processData(&currentData, data);
+				ADC_processData(&currentData, &previousCurrents data);
 				Signal_processData(&current, data);
 				Power_processData();
 
