@@ -47,7 +47,8 @@ static struct PowerData power = {0, 0, INT_MIN, INT_MAX};
 // Power approximation arrays.
 static int16_t previousVoltages[3] = {0, 0, 0};
 static int16_t previousCurrents[3] = {0, 0, 0};
-static int32_t previousPower[3] = {0, 0, 0};
+static int32_t previousPower[2] = {0, 0};
+static uint8_t powerInitCount = 0;
 
 void ADC_init()
 {
@@ -80,6 +81,7 @@ void ADC_processData(struct ADCData *storage, int16_t *storageArray, int16_t dat
 	storage->timestamp = System_getTimeMicro(); // Store the current time of the sample.
 	storage->value = data;
 
+	// Recording previous signal values for use in power approximation.
 	// Push back other values.
 	for (uint8_t i = 2; i > 0; i--)
 	{
@@ -109,6 +111,7 @@ void ADC_setDataReady()
 	periodTimeSum = 0;
 	VCTDSum = 0;
 	periodCount = 0;
+	powerInitCount = 0;
 	Signal_clear(&voltage);
 	Signal_clear(&current);
 	Power_clear();
@@ -142,24 +145,31 @@ void Signal_processData(struct SignalData *storage, int16_t data)
 
 void Power_processData()
 {
-	power.sampleCount++;
+	// Power approximation
+	previousPower[0] = previousPower[1];
+	previousPower[1] = ((previousVoltages[0] + previousVoltages[2]) / 2) * ((previousCurrents[0] + previousCurrents[2]) / 2);
 
-	for (uint8_t i = 2; i > 0; i--)
+	// There needs to be 3 power 'readings' before the approximate power actually reflects the real power.
+	// The arrays need to first fill up.
+	if (powerInitCount > 3)
 	{
-		previousPower[i - 1] = previousPower[i];
-	}
-	previousPower[2] = 
+		int32_t approxPower = (previousPower[0] + previousPower[1]) / 2;
 
-	int32_t approxPower = 
-	int32_t instantPower = (int32_t) voltageData.value * currentData.value;
-	power.sum += instantPower;
-	if (instantPower > power.max)
-	{
-		power.max = instantPower;
+		power.sum += approxPower;
+		if (approxPower > power.max)
+		{
+			power.max = approxPower;
+		}
+		if (approxPower < power.min)
+		{
+			power.min = approxPower;
+		}
+
+		power.sampleCount++;
 	}
-	if (instantPower < power.min)
+	else
 	{
-		power.min = instantPower;
+		powerInitCount++;
 	}
 }
 
@@ -169,6 +179,7 @@ void Power_clear()
 	power.max = INT_MIN;
 	power.min = INT_MAX;
 	power.sum = 0;
+	powerInitCount = 0;
 }
 
 // To ensure readings are done as soon as possible after they are taken from

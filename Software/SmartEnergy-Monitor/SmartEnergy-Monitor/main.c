@@ -128,8 +128,8 @@ static void runningAverageFill()
 
   // Sample counts may differ slightly over measurement samples, so to smooth over values we can take the average amount of samples.
 	sampleCountSum -= sampleCountSumArray[arrayCount];
-	sampleCountSum += lastPowerCopy.sampleCount;
-	sampleCountSumArray[arrayCount] = lastPowerCopy.sampleCount;
+	sampleCountSum += lastCurrentCopy.sampleCount;
+	sampleCountSumArray[arrayCount] = lastCurrentCopy.sampleCount;
 
   // Need to keep the average running.
 	arrayCount++;
@@ -146,7 +146,7 @@ void runningAverageSetDisplay()
 {
 	Display_values[vRMS] = ADC_convertToVoltage(sqrt((double) voltageSquaredSum / sampleCountSum)) * (vScale + vScaleAdjust);
 	Display_values[iMAX] = ADC_convertToVoltage((double) currentMaxSum / (ARRAY_COUNT_MAX) / 2) * iScale;
-	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((double) powerSum / sampleCountSum)) * (vScale + vScaleAdjust) * iScale;
+	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((double) powerSum / (sampleCountSum - ARRAY_COUNT_MAX * 3))) * (vScale + vScaleAdjust) * iScale; // Adjust for approximation sample counts (-3 each time).
 
   // Period based measurements disabled.
 	// Display_values[frequency] = ((float) (periodCountMax * ARRAY_COUNT_MAX) / periodSum) / 1000000;
