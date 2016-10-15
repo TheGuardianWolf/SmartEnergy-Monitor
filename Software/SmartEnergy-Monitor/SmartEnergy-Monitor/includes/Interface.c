@@ -12,8 +12,10 @@
 #include <avr/io.h>
 
 // Initialise globals.
+volatile uint8_t Interface_buttonState = 0;
 volatile uint8_t Interface_ledState = 0;
 volatile bool Interface_ledIsOn = false;
+volatile uint8_t Interface_buttonDebounceState = 0; // 0: Not pressed, 1: Pressed, 2: Released
 
 // Declare locals.
 static uint64_t ledDelayStart = 0;
@@ -93,5 +95,15 @@ void Interface_runStateMachine()
 		default:
 		Interface_ledOn();
 		break;
+	}
+
+	// Button debouncing technique
+	if (Interface_buttonIsPressed)
+	{
+		Interface_buttonDebounceState = 1;
+	}
+	else if (Interface_buttonDebounceState == 1)
+	{
+		Interface_buttonDebounceState = 2;
 	}
 }

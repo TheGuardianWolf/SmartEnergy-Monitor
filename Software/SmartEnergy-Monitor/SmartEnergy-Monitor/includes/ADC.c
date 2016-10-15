@@ -18,7 +18,7 @@
 
 // Initialise constants/
 const uint8_t periodCountMax = 25;
-const float ADC_sensitivity = 4.882813e-3;
+const double ADC_sensitivity = 4.882813e-3;
 
 // Set global data transfer variables.
 volatile uint8_t ADC_state = 0;
@@ -34,7 +34,6 @@ static int16_t rawData = 0;
 static int16_t data = 0;
 static uint8_t ADC_channel = 2;
 static int16_t nullVal = 338;
-static int8_t circuitBias = 0; // Op amps are biasing the inputs, need to reverse this.
 static const uint16_t DCSampleCountMax = 512;
 static uint8_t periodCount = 0;
 static uint16_t periodTimeSum = 0;
@@ -78,7 +77,7 @@ void ADC_processData(struct ADCData *storage, int16_t data)
 	storage->value = data;
 }
 
-float ADC_convertToVoltage(float adcValue)
+double ADC_convertToVoltage(double adcValue)
 {
 	return adcValue * ADC_sensitivity;
 }
@@ -183,7 +182,7 @@ ISR(ADC_vect)
 	// Measurement states
 	else
 	{
-		data = rawData - nullVal - circuitBias;
+		data = rawData - nullVal;
 
 		ADC_setChannel((ADC_channel + 1) & 1);
 

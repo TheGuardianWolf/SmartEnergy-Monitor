@@ -24,8 +24,12 @@
 
 // Scale values load values / circuit output. Last revised 10/10/16.
 //static const float vScale = 14.47; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
-static const float vScale = 14.67; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
-static const float iScale = 0.74; // Ratio of ADC input max current to load max current. Adjust by +- 0.01.
+static const double vScale = 14.87; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
+static const double iScale = 0.74; // Ratio of ADC input max current to load max current. Adjust by +- 0.01.
+
+// Button VScale adjust.
+static uint8_t vScaleAdjustState = 0;
+static double vScaleAdjust = 0.0; 
 
 // Optimized copy of data (Non volatile).
 static struct SignalData lastVoltageCopy;
@@ -140,9 +144,9 @@ static void runningAverageFill()
 */
 void runningAverageSetDisplay()
 {
-	Display_values[vRMS] = ADC_convertToVoltage(sqrt((double) voltageSquaredSum / sampleCountSum)) * vScale;
+	Display_values[vRMS] = ADC_convertToVoltage(sqrt((double) voltageSquaredSum / sampleCountSum)) * (vScale + vScaleAdjust);
 	Display_values[iMAX] = ADC_convertToVoltage((double) currentMaxSum / (ARRAY_COUNT_MAX) / 2) * iScale;
-	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((double) powerSum / sampleCountSum)) * vScale * iScale;
+	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((double) powerSum / sampleCountSum)) * (vScale + vScaleAdjust) * iScale;
 
   // Period based measurements disabled.
 	// Display_values[frequency] = ((float) (periodCountMax * ARRAY_COUNT_MAX) / periodSum) / 1000000;
@@ -156,7 +160,7 @@ void runningAverageSetDisplay()
  */
 void runningAverageSetLED()
 {
-	float power = Display_values[pAVG];
+	double power = Display_values[pAVG];
 
   // Convert power to an absolute value.
 	if (power < 0)
@@ -185,6 +189,31 @@ void runningAverageSetLED()
 	}
 }
 
+/**
+ * The voltage scaling has been somewhat strangely unstable, so instead of
+ * adjusting via programming, it can be adjusted via button press for convenience.
+ */
+
+void buttonAdjustVScale()
+{
+	if (Interface_buttonDebounceState == 3)
+	{
+		switch(vScaleAdjustState)
+		{
+		case 0:
+		vScaleAdjustState = 1;
+		vScaleAdjust = 0.2;
+		case 1:
+		vScaleAdjustState = 2;
+		vScaleAdjust = -0.2;
+		default:
+		vScaleAdjustState = 0;
+		vScaleAdjust = 0.0;
+		}
+	}
+	
+}
+
 
 int main(void)
 {
@@ -203,9 +232,11 @@ int main(void)
 			runningAverageFill();
 			runningAverageSetDisplay();
 			runningAverageSetLED();
-
-			Interface_runStateMachine();
-			Display_runStateMachine();
 		}
+
+		Interface_runStateMachine();
+		Display_runStateMachine();
+
+		buttonAdjustVScale();
 	}
 }
