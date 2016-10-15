@@ -61,7 +61,7 @@ void Display_encode(uint8_t *characters, uint8_t decimal_index);
  * @param result       Pointer to array storage of size 4+.
  * @param decimalIndex Pointer to a 8-bit int.
  */
-void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex);
+void Display_doubleToChar(double value, uint8_t *result, uint8_t *decimalIndex);
 
 /**
  * State machine intended to be run in the main loop. Controls all Display

@@ -15,6 +15,8 @@
 // Declare globals.
 volatile uint8_t Interface_ledState;
 volatile bool Interface_ledIsOn;
+volatile bool Interface_ledIsOn;
+volatile uint8_t Interface_buttonDebounceState; // 0: Not pressed, 1: Pressed, 2: Released
 
 /**
  * Initialise the IO registers for reading/writing.

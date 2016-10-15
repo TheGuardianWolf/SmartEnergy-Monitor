@@ -17,7 +17,7 @@
 
 // Declare globals.
 volatile uint8_t Display_state = 0;
-float Display_values[5] = {0, 0, 0, 0, 0};
+double Display_values[5] = {0, 0, 0, 0, 0};
 
 // Declare locals.
 static uint64_t delayStart = 0;
@@ -149,7 +149,7 @@ void Display_encode(uint8_t *characters, uint8_t decimalIndex)
 	}
 }
 
-void Display_floatToChar(float value, uint8_t *result, uint8_t *decimalIndex)
+void Display_doubleToChar(double value, uint8_t *result, uint8_t *decimalIndex)
 {
 	int16_t dec = value; // Convert to whole number.
 
@@ -263,7 +263,7 @@ void Display_runStateMachine()
 		// Parameter value display state.
 		else if (Display_state == 1)
 		{
-			Display_floatToChar(Display_values[displayIndex], tempArray, &tempDecimalIndex);
+			Display_doubleToChar(Display_values[displayIndex], tempArray, &tempDecimalIndex);
 			Display_encode(tempArray, tempDecimalIndex);
 
 			// Delay by 15 update units.

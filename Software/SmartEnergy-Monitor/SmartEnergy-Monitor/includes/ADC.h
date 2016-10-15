@@ -48,7 +48,7 @@ struct PowerData
 
 // Declare constants
 const uint8_t periodCountMax;
-const float ADC_sensitivity;
+const double ADC_sensitivity;
 
 // Volatile variables for use in tranporting data between ISR and elsewhere.
 volatile uint8_t ADC_state;
@@ -90,7 +90,7 @@ void ADC_processData(struct ADCData *storage, int16_t data);
  * @param  adcValue The ADC value.
  * @return          A floating point voltage value.
  */
-float ADC_convertToVoltage(float adcValue);
+double ADC_convertToVoltage(double adcValue);
 
 /**
  * Signals data is ready to be read by other modules. Sets ADC_dataReady flag.
