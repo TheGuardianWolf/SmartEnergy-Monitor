@@ -182,8 +182,12 @@ void Power_clear()
 	powerInitCount = 0;
 }
 
-// To ensure readings are done as soon as possible after they are taken from
-// the ADC, a lot of code was placed in this ISR. Due to ISR priority,
+void ADC_runStateMachine()
+{
+
+}
+
+// To simplify timings, a lot of code was placed in this ISR. Due to ISR priority,
 // other interrupts can still fire so timing is still preserved for timing
 // critical operations in other ISRs.
 ISR(ADC_vect)
@@ -292,8 +296,8 @@ ISR(INT0_vect)
 	{
 		ADC_state = 3;
 		// The following has to be done immediately on mode switch, so it goes into this ISR. There are better ways to go about this
-		// but they require large amounts of code refactoring and time.
-		ATOMIC_BLOCK(ATOMIC_RESTORESTATE) // To be honest blocking is not needed as INT has the highest priority, but to be safe. ADC interrupt must NOT fire before this.
+		// but this is what works at the moment.
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE) // ADC interrupt must NOT fire before this.
 		{
 			Signal_clear(&voltage);
 			Signal_clear(&current);
