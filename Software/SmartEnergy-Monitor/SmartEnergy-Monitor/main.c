@@ -24,8 +24,8 @@
 
 // Scale values load values / circuit output. Last revised 10/10/16.
 //static const float vScale = 14.47; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
-static const double vScale = 14.87; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
-static const double iScale = 0.74; // Ratio of ADC input max current to load max current. Adjust by +- 0.01.
+static const double vScale = 14.78; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
+static const double iScale = 0.7; // Ratio of ADC input max current to load max current. Adjust by +- 0.01.
 
 // Button VScale adjust.
 static uint8_t vScaleAdjustState = 0;
@@ -52,6 +52,7 @@ static uint32_t periodSum = 0;
 static uint16_t periodSumArray[ARRAY_COUNT_MAX];
 static uint16_t sampleCountSum = 0;
 static uint16_t sampleCountSumArray[ARRAY_COUNT_MAX];
+static int16_t maxCurrent = -1024;
 
 /**
  * Initialise the system.
@@ -74,13 +75,14 @@ void System_init()
 /**
 * Clears the secondary averaging arrays and variables.
 */
-static void runningAverageClear()
+void runningAverageClear()
 {
 	voltageSquaredSum = 0;
 	currentMaxSum = 0;
 	powerSum = 0;
 	periodDifferenceSum = 0;
 	periodSum = 0;
+	maxCurrent = -1024;
 	memset(voltageSquaredSumArray, 0, sizeof(voltageSquaredSumArray));
 	memset(currentMaxSumArray, 0, sizeof(currentMaxSumArray));
 	memset(powerSumArray, 0, sizeof(powerSumArray));
@@ -93,7 +95,7 @@ static void runningAverageClear()
 * secondary averaging. Smoothens display transitions and any outlying
 * measurement samples.
 */
-static void runningAverageFill()
+void runningAverageFill()
 {
   // Copy volatile variables to optimised variables for R/W.
 	lastVoltageCopy = lastVoltage;
@@ -116,6 +118,15 @@ static void runningAverageFill()
 	powerSum -= powerSumArray[arrayCount];
 	powerSum += lastPowerCopy.sum;
 	powerSumArray[arrayCount] = lastPowerCopy.sum;
+
+	maxCurrent = -1024;
+	for (uint8_t i = 0; i < ARRAY_COUNT_MAX; i++)
+	{
+		if (currentMaxSumArray[i] > maxCurrent)
+		{
+			maxCurrent = currentMaxSumArray[i];
+		}
+	}
 
   // Calculation of period not required and is not working correctly anyway.
 	// periodDifferenceSum -= periodDifferenceSumArray[arrayCount];
@@ -146,6 +157,7 @@ void runningAverageSetDisplay()
 {
 	Display_values[vRMS] = ADC_convertToVoltage(sqrt((double) voltageSquaredSum / sampleCountSum)) * (vScale + vScaleAdjust);
 	Display_values[iMAX] = ADC_convertToVoltage((double) currentMaxSum / (ARRAY_COUNT_MAX) / 2) * iScale;
+	//Display_values[iMAX] = ADC_convertToVoltage((double) maxCurrent / 2) * iScale;
 	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((double) powerSum / sampleCountSum)) * (vScale + vScaleAdjust) * iScale;
 
   // Period based measurements disabled.
@@ -196,22 +208,27 @@ void runningAverageSetLED()
 
 void buttonAdjustVScale()
 {
-	if (Interface_buttonDebounceState == 3)
+	if (Interface_buttonDebounceState == 2)
 	{
-		switch(vScaleAdjustState)
-		{
-		case 0:
-		vScaleAdjustState = 1;
-		vScaleAdjust = 0.2;
-		case 1:
-		vScaleAdjustState = 2;
-		vScaleAdjust = -0.2;
-		default:
-		vScaleAdjustState = 0;
-		vScaleAdjust = 0.0;
-		}
+		vScaleAdjustState++;
+		Interface_buttonDebounceState = 0;
 	}
-	
+	if (vScaleAdjustState == 0)
+	{
+		vScaleAdjust = 0.0;
+	}
+	else if (vScaleAdjustState == 1)
+	{
+		vScaleAdjust = 0.1;
+	}
+	else if (vScaleAdjustState == 2)
+	{
+		vScaleAdjust = -0.1;
+	}
+	else 
+	{
+		vScaleAdjustState = 0;
+	}	
 }
 
 

@@ -223,6 +223,7 @@ void Display_doubleToChar(double value, uint8_t *result, uint8_t *decimalIndex)
 	// For the last one, round.
 	if (charsUsed == 3)
 	{
+		value = value * 10;
 		result[charsUsed] = ((uint32_t) (value + 0.5)) % 10 + '0';
 		charsUsed++;
 	}

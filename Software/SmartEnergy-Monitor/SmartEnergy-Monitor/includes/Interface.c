@@ -98,7 +98,7 @@ void Interface_runStateMachine()
 	}
 
 	// Button debouncing technique
-	if (Interface_buttonIsPressed)
+	if (Interface_buttonIsPressed())
 	{
 		Interface_buttonDebounceState = 1;
 	}
