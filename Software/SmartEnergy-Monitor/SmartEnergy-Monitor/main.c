@@ -24,7 +24,7 @@
 
 // Scale values load values / circuit output. Last revised 10/10/16.
 //static const float vScale = 14.47; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
-static const double vScale = 14.78; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
+static const double vScale = 14.68; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
 static const double iScale = 0.7; // Ratio of ADC input max current to load max current. Adjust by +- 0.01.
 
 // Button VScale adjust.
