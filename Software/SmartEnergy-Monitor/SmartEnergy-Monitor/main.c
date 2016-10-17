@@ -1,6 +1,8 @@
 /*
 * SmartEnergy-Monitor.c
 * Code for the wireless energy monitor. Odd parity is enabled for transmission.
+* Code was ported over from a C++ implementation by using static in place of
+* private namespaces as ISRs were too difficult to use in C++.
 * Group 10
 *
 * Created: 12/08/2016 12:38:02 PM
@@ -22,14 +24,14 @@
 #define ARRAY_COUNT_MAX 50
 #define RATED_POWER 8.5
 
-// Scale values load values / circuit output. Last revised 10/10/16.
-//static const float vScale = 14.47; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
+// Scale values load values / circuit output. Last revised 17/10/16.
 static const double vScale = 14.89; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
 static const double iScale = 0.71; // Ratio of ADC input max current to load max current. Adjust by +- 0.01.
 
 // Button VScale adjust.
-static uint8_t vScaleAdjustState = 0;
+static uint8_t scaleAdjustState = 0;
 static double vScaleAdjust = 0.0; 
+static double iScaleAdjust = 0.00; 
 
 // Optimized copy of data (Non volatile).
 static struct SignalData lastVoltageCopy;
@@ -95,43 +97,43 @@ void runningAverageClear()
 */
 void runningAverageFill()
 {
-  // Copy volatile variables to optimised variables for R/W.
+	// Copy volatile variables to optimised variables for R/W.
 	lastVoltageCopy = lastVoltage;
 	lastCurrentCopy = lastCurrent;
 	lastPowerCopy = lastPower;
 	lastPeriodTimeSumCopy = lastPeriodTimeSum;
 	lastVCTDSumCopy = lastVCTDSum;
 
-  // Average the voltage squared values over each measurement sample (20 periods or 512 samples depending on AC/DC mode).
+	// Average the voltage squared values over each measurement sample (20 periods or 512 samples depending on AC/DC mode).
 	voltageSquaredSum -= voltageSquaredSumArray[arrayCount];
 	voltageSquaredSum += lastVoltageCopy.squared;
 	voltageSquaredSumArray[arrayCount] = lastVoltageCopy.squared;
 
-  // Average the current max values over each measurement sample (20 periods or 512 samples depending on AC/DC mode).
+	// Average the current max values over each measurement sample (20 periods or 512 samples depending on AC/DC mode).
 	currentMaxSum -= currentMaxSumArray[arrayCount];
 	currentMaxSumArray[arrayCount] = lastCurrentCopy.max - lastCurrentCopy.min; // Make use of the min samples to smooth out circuit effects.
 	currentMaxSum += currentMaxSumArray[arrayCount]; 
 
-  // Average the voltage squared values over each measurement sample (20 periods or 512 samples depending on AC/DC mode).
+	// Average the voltage squared values over each measurement sample (20 periods or 512 samples depending on AC/DC mode).
 	powerSum -= powerSumArray[arrayCount];
 	powerSum += lastPowerCopy.sum;
 	powerSumArray[arrayCount] = lastPowerCopy.sum;
 
-  // Calculation of period not required and is not working correctly anyway.
+	// Calculation of period not required and is not working correctly anyway.
 	// periodDifferenceSum -= periodDifferenceSumArray[arrayCount];
 	// periodDifferenceSum += lastVCTDSumCopy;
 	// periodDifferenceSumArray[arrayCount] = lastVCTDSumCopy;
-  //
+	//
 	// periodSum -= periodSumArray[arrayCount];
 	// periodSum += lastPeriodTimeSum;
 	// periodSumArray[arrayCount] = lastPeriodTimeSum;
 
-  // Sample counts may differ slightly over measurement samples, so to smooth over values we can take the average amount of samples.
+	// Sample counts may differ slightly over measurement samples, so to smooth over values we can take the average amount of samples.
 	sampleCountSum -= sampleCountSumArray[arrayCount];
 	sampleCountSum += lastPowerCopy.sampleCount;
 	sampleCountSumArray[arrayCount] = lastPowerCopy.sampleCount;
 
-  // Need to keep the average running.
+	// Cycle through the averaging array for a running average (hence the name).
 	arrayCount++;
 	if (arrayCount >= ARRAY_COUNT_MAX)
 	{
@@ -144,12 +146,27 @@ void runningAverageFill()
 */
 void runningAverageSetDisplay()
 {
-	Display_values[vRMS] = ADC_convertToVoltage(sqrt((double) voltageSquaredSum / sampleCountSum)) * (vScale);
-	Display_values[iMAX] = ADC_convertToVoltage((double) currentMaxSum / (ARRAY_COUNT_MAX) / 2) * iScale;
-	//Display_values[iMAX] = ADC_convertToVoltage((double) maxCurrent / 2) * iScale;
-	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((double) powerSum / sampleCountSum)) * (vScale) * iScale;
+	// RMS Voltage calculation by dividing the squared voltage by the number of 
+	// individual voltage samples taken over the 50 secondary averaging samples.
+	// This is then converted to a floating point input voltage at the ADC then
+	// adjusted for circuit gain using vScale.
+	Display_values[vRMS] = ADC_convertToVoltage(sqrt((double) voltageSquaredSum / sampleCountSum)) * (vScale + vScaleAdjust);
 
-  // Period based measurements disabled.
+	// Max current calculation by dividing the max current by the number of
+	// secondary samples as each secondary sample only contributes one max value
+	// sample. This is then converted to a floating point input voltage at the ADC 
+	// then adjusted for circuit gain using iScale.
+	Display_values[iMAX] = ADC_convertToVoltage((double) currentMaxSum / (ARRAY_COUNT_MAX) / 2) * (iScale + iScaleAdjust);
+
+	// Average power calculation by dividing the total power sum by the number of
+	// individual power samples taken over the 50 secondary averaging samples.
+	// This is then converted to a floating point input voltage twice as we need
+	// to reverse both the voltage AND current reading's scaling. This is then
+	// adjusted for circuit gain of both the voltage sensing and current sensing
+	// parts.
+	Display_values[pAVG] = ADC_convertToVoltage(ADC_convertToVoltage((double) powerSum / sampleCountSum)) * (vScale + vScaleAdjust) * (iScale+ iScaleAdjust);
+
+	// Timing based measurements disabled (WONTFIX).
 	// Display_values[frequency] = ((float) (periodCountMax * ARRAY_COUNT_MAX) / periodSum) / 1000000;
 	// Display_values[phaseDifference] = ((float) periodSum / (periodCountMax * ARRAY_COUNT_MAX)) * 360 / ((float) periodDifferenceSum / (periodCountMax * ARRAY_COUNT_MAX));
 }
@@ -191,32 +208,36 @@ void runningAverageSetLED()
 }
 
 /**
- * The voltage scaling has been somewhat strangely unstable, so instead of
- * adjusting via programming, it can be adjusted via button press for convenience.
+ * This is for convenience in debugging, testing scaling values slightly higher or 
+ * lower than the defined value is tedious as we have to re-program the microcontroller
+ * each time.
  */
 
-void buttonAdjustVScale()
+void buttonAdjustScale()
 {
 	if (Interface_buttonDebounceState == 2)
 	{
-		vScaleAdjustState++;
+		scaleAdjustState++;
 		Interface_buttonDebounceState = 0;
 	}
-	if (vScaleAdjustState == 0)
+	if (scaleAdjustState == 0)
 	{
 		vScaleAdjust = 0.0;
+		iScaleAdjust = 0.00;
 	}
-	else if (vScaleAdjustState == 1)
+	else if (scaleAdjustState == 1)
 	{
 		vScaleAdjust = 0.2;
+		iScaleAdjust = 0.02;
 	}
-	else if (vScaleAdjustState == 2)
+	else if (scaleAdjustState == 2)
 	{
 		vScaleAdjust = -0.2;
+		iScaleAdjust = -0.02;
 	}
 	else 
 	{
-		vScaleAdjustState = 0;
+		scaleAdjustState = 0;
 	}	
 }
 
@@ -240,9 +261,11 @@ int main(void)
 			runningAverageSetLED();
 		}
 
+		// Run the state machines.
 		Interface_runStateMachine();
 		Display_runStateMachine();
 
-		buttonAdjustVScale();
+		// Debug assistants.
+		buttonAdjustScale();
 	}
 }
