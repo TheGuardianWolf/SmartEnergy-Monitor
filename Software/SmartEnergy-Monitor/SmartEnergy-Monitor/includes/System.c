@@ -2,7 +2,7 @@
 * System.c
 *
 * Created: 24/08/2016 6:22:34 PM
-*  Author: lichk
+*  Author: Jerry Fan
 */
 
 #include "System.h"
