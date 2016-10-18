@@ -6,7 +6,7 @@
 * Group 10
 *
 * Created: 12/08/2016 12:38:02 PM
-* Author : Jerry Fan
+* Author : Group 10
 */
 
 #include "includes/System.h"
