@@ -111,7 +111,7 @@ void runningAverageFill()
 
 	// Average the current max values over each measurement sample (20 periods or 512 samples depending on AC/DC mode).
 	currentMaxSum -= currentMaxSumArray[arrayCount];
-	currentMaxSumArray[arrayCount] = lastCurrentCopy.max - lastCurrentCopy.min; // Make use of the min samples to smooth out circuit effects.
+	currentMaxSumArray[arrayCount] = lastCurrentCopy.max;
 	currentMaxSum += currentMaxSumArray[arrayCount]; 
 
 	// Average the voltage squared values over each measurement sample (20 periods or 512 samples depending on AC/DC mode).
@@ -156,7 +156,7 @@ void runningAverageSetDisplay()
 	// secondary samples as each secondary sample only contributes one max value
 	// sample. This is then converted to a floating point input voltage at the ADC 
 	// then adjusted for circuit gain using iScale.
-	Display_values[iMAX] = ADC_convertToVoltage((double) currentMaxSum / (ARRAY_COUNT_MAX) / 2) * (iScale + iScaleAdjust);
+	Display_values[iMAX] = ADC_convertToVoltage((double) currentMaxSum / (ARRAY_COUNT_MAX)) * (iScale + iScaleAdjust);
 
 	// Average power calculation by dividing the total power sum by the number of
 	// individual power samples taken over the 50 secondary averaging samples.
