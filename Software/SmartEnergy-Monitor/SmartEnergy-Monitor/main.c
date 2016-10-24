@@ -25,7 +25,7 @@
 #define RATED_POWER 8.5
 
 // Scale values load values / circuit output. Last revised 17/10/16.
-static const double vScale = 14.89; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
+static const double vScale = 14.60; // Ratio of ADC input rms voltage to load rms voltage. Adjust by +- 0.1.
 static const double iScale = 0.71; // Ratio of ADC input max current to load max current. Adjust by +- 0.01.
 
 // Button VScale adjust.
